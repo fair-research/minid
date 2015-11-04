@@ -21,9 +21,9 @@ The CLI supports the following simple operations:
 
 * Create a new identifier: `minid.py <file_name> --register [--title <title>]`
 * Retrieve metadata about a file: `minid.py <file_name>`
-* Retreive metadata about an identifier: `minid.py <identifier>`
+* Retrieve metadata about an identifier: `minid.py <identifier>`
 
-Landing pages are accesible via the minid website: minid.bd2k.org/minid/<identifier>. 
+Landing pages are accessible via the minid website: minid.bd2k.org/minid/<identifier>. 
 
 ## More information
 More information about the project can be found at: minid.bd2k.org
