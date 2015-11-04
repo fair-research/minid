@@ -1,0 +1,31 @@
+<html>
+<head>
+
+<style> 
+.titleClass{
+  font-weight: bold;
+}
+.valueClass{
+  margin-left: 10px;
+}
+</style>
+</head>
+<body>
+
+<div class="titleClass">Identifier:</div> <a href="http://n2t.net/{{ data.identifier }}"><div class="valueClass">{{ data.identifier }}</a></div>
+    <div class="titleClass">Created:</div> <div class="valueClass">{{ data.created }}</div>
+    <div class="titleClass">Creator:</div> <div class="valueClass">{{ data.creator }} (<a href="http://orcid.org/{{ data.orcid }}">{{ data.orcid }})</a></div>
+    <div class="titleClass">Checksum:</div> <div class="valueClass">{{ data.checksum }}</div>
+
+    <div class="titleClass">Locations:</div> 
+    {% for location in data.locations %}
+    <div class="valueClass"><a href="https://www.globus.org/xfer/StartTransfer?origin={{ location.uri|urlencode() }}">{{ location.uri}}</a></div>
+    {% endfor %}
+    <div class="titleClass">Titles:</div> 
+    {% for title in data.titles %}
+    <div class="valueClass">{{ title.title }}</div>
+    {% endfor %}
+
+    <img src="http://qrickit.com/api/qr?d=http://n2t.net/{{ data.identifier}}">
+    </body>
+</html>

@@ -1,0 +1,17 @@
+<html>
+<head>
+<script>
+function redirect(){
+   location.href=location.href + document.getElementById('identifier').value;
+}
+</script>
+</head>
+<body>
+<h2>BD2K Minimum Viable Identifier (minid)</h2>
+
+<form>
+    <input type="text" id="identifier" >
+    <input type="button" id="submit" value="Find Identifier" onclick="redirect()">
+</form>
+
+</body>
