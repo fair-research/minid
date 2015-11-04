@@ -7,6 +7,6 @@ setup(name='minid',
     author_email='chard@uchicago.edu',
     packages=['minid-server'],
     scripts = [
-        'scripts/minid.py', 'scripts/minid'
+        'scripts/minid.py'
     ]
 )
