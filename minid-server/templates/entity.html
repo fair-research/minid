@@ -1,31 +1,83 @@
-<html>
-<head>
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
 
-<style> 
+    <title>A BD2K Minimal Viable Identifier Pilot</title>
+
+    <!-- Bootstrap core CSS -->
+    <link rel="stylesheet" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css">
+
+    <!-- Custom styles -->
+    <link href="{{ url_for('static', filename='css/starter-template.css')}}" rel="stylesheet">
+
+    <style>
 .titleClass{
-  font-weight: bold;
+    font-weight: bold;
 }
 .valueClass{
-  margin-left: 10px;
+    margin-bottom: 10px;
 }
-</style>
+    </style>
+    ~       
 </head>
+
 <body>
 
-<div class="titleClass">Identifier:</div> <a href="http://n2t.net/{{ data.identifier }}"><div class="valueClass">{{ data.identifier }}</a></div>
-    <div class="titleClass">Created:</div> <div class="valueClass">{{ data.created }}</div>
-    <div class="titleClass">Creator:</div> <div class="valueClass">{{ data.creator }} (<a href="http://orcid.org/{{ data.orcid }}">{{ data.orcid }})</a></div>
-    <div class="titleClass">Checksum:</div> <div class="valueClass">{{ data.checksum }}</div>
+    <nav class="navbar navbar-default navbar-fixed-top">
+        <div class="container">
+            <div class="navbar-header">
+                <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+                    <span class="sr-only">Toggle navigation</span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                </button>
+                <a class="navbar-brand" href="/"><img style="max-width:100px; margin-top: -16px;" src="{{ url_for('static', filename='images/minid-logo.png')}}"></a>
+            </div>
+            <div id="navbar" class="collapse navbar-collapse">
+                <ul class="nav navbar-nav">
+                <!--<li class="active"><a href="#">Home</a></li>-->
+                <li><a href="https://github.com/ini-bdds/minid">GitHub</a></li>
+                <li><a href="#about">Whitepaper</a></li>
+                <li><a href="http://bd2k.ini.usc.edu">BDDS</a></li>
+                </ul>
+            </div><!--/.nav-collapse -->
+        </div>
+    </nav>
 
-    <div class="titleClass">Locations:</div> 
-    {% for location in data.locations %}
-    <div class="valueClass"><a href="https://www.globus.org/xfer/StartTransfer?origin={{ location.uri|urlencode() }}">{{ location.uri}}</a></div>
-    {% endfor %}
-    <div class="titleClass">Titles:</div> 
-    {% for title in data.titles %}
-    <div class="valueClass">{{ title.title }}</div>
-    {% endfor %}
+    <div class="container">
 
-    <img src="http://qrickit.com/api/qr?d=http://n2t.net/{{ data.identifier}}">
-    </body>
+    <div class="starter-template text-center">
+        <div class="titleClass">Identifier:</div> <a href="http://n2t.net/{{ data.identifier }}"><div class="valueClass">{{ data.identifier }}</a></div>
+        <div class="titleClass">Created:</div> <div class="valueClass">{{ data.created }}</div>
+        <div class="titleClass">Creator:</div> <div class="valueClass">{{ data.creator }} (<a href="http://orcid.org/{{ data.orcid }}">{{ data.orcid }})</a></div>
+        <div class="titleClass">Checksum:</div> <div class="valueClass">{{ data.checksum }}</div>
+
+        <div class="titleClass">Locations:</div>
+        {% for location in data.locations %}
+        <div class="valueClass"><a href="https://www.globus.org/xfer/StartTransfer?origin={{ location.uri|urlencode() }}">{{ location.uri}}</a></div>
+        {% endfor %}
+        <div class="titleClass">Titles:</div>
+        {% for title in data.titles %}
+        <div class="valueClass">{{ title.title }}</div>
+        {% endfor %}
+
+        <img src="http://qrickit.com/api/qr?d=http://n2t.net/{{ data.identifier}}">
+
+    </div>
+
+    </div><!-- /.container -->
+
+
+<!-- Bootstrap core JavaScript
+================================================== -->
+<!-- Placed at the end of the document so the pages load faster -->
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+<script src="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js"></script>
+</body>
 </html>
+
