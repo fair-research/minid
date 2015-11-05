@@ -14,6 +14,22 @@
     <!-- Custom styles -->
     <link href="css/starter-template.css" rel="stylesheet">
 
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+    <script src="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js"></script>
+
+    <script>
+        $( document ).ready(function() {
+                $("#search-button").click(function(){
+                    window.location = "/minid/" + $("#search-bar").val();
+                });
+                $('#search-bar').keypress(function(e){
+                    if(e.which == 13){
+                        $('#search-button').click();
+                    }
+                });
+        });
+    </script>
+
   </head>
 
   <body>
@@ -41,6 +57,17 @@
     </nav>
 
     <div class="container">
+        <div class="col-xs-12" style="height:20px;"></div>
+        <div class="row">
+            <div class="col-lg-12">
+                <div class="input-group">
+                    <input type="text" class="form-control" id="search-bar" placeholder="Search for identifier or checksum ...">
+                    <span class="input-group-btn">
+                    <button class="btn btn-default" type="button" id="search-button">Go!</button>
+                    </span>
+                </div>
+            </div>
+        </div>
 
       <div class="starter-template text-center">
         <h1>Minid: A BD2K Minimal Identifier Pilot</h1>
@@ -62,13 +89,6 @@
     </div>
 
     </div><!-- /.container -->
-
-
-    <!-- Bootstrap core JavaScript
-    ================================================== -->
-    <!-- Placed at the end of the document so the pages load faster -->
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
-    <script src="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js"></script>
   </body>
 </html>
 
