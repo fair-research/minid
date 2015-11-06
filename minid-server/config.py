@@ -3,7 +3,9 @@ class BaseConfig(object):
     TESTING = False
     
     SQLALCHEMY_DATABASE_URI = "sqlite:////tmp/minid.db"
+
     HOSTNAME = "http://localhost:5000/minid"
+    LANDING_PAGE = "http://localhost:5000/minid/landingpage"
 
     EZID_SERVER =  "https://ezid.cdlib.org"
     EZID_SCHEME = "ark:/"
@@ -16,8 +18,10 @@ class ProdConfig(BaseConfig):
     TESTING = False
 
     SQLALCHEMY_DATABASE_URI = "<DATABASE_URL>"
-    HOSTNAME = "<HOSTNAME>"
     
+    HOSTNAME = "<HOSTNAME>"
+    LANDING_PAGE = "<LANDING_PAGE>"
+
     EZID_SERVER =  ""
     EZID_SCHEME = ""
     EZID_SHOULDER = ""

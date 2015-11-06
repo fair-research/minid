@@ -12,7 +12,7 @@ def create_ark(creator, created, title):
 
     response = client.mint_identifier(data)
     print "minted %s" % app.config["HOSTNAME"] 
-    data ["_target"] = "%s/%s" % (app.config["HOSTNAME"], response["identifier"])
+    data ["_target"] = "%s/%s" % (app.config["LANDING_PAGE"], response["identifier"])
     client.update_identifier(response["identifier"], data)
     return response["identifier"]
 
@@ -23,9 +23,9 @@ def request_wants_json():
         request.accept_mimetypes[best] > \
         request.accept_mimetypes['text/html']
 
-@app.route('/minid/<path:path>', methods=['GET'])
+@app.route('/minid/landingpage/<path:path>', methods=['GET'])
 def get_entity(path):
-    print "Getting entity %s" % path
+    print "Getting landing page %s" % path
     entity = Entity.query.filter_by(identifier=path).first()
     if entity is None: 
         entity = Entity.query.filter_by(checksum=path).first()

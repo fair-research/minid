@@ -34,7 +34,7 @@ def compute_checksum(open_file, algorithm, block_size=65536):
     return algorithm.hexdigest()
 
 def get_entity(server, name):
-    r = requests.get("%s/%s" % (server, name), headers={"Accept" : "application/json"})
+    r = requests.get("%s/landingpage/%s" % (server, name), headers={"Accept" : "application/json"})
     if r.status_code == 404:
         return None
     return r.json()

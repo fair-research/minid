@@ -50,6 +50,7 @@ class EZIDClient():
         try:
             response = self.opener.open(request).read()
         except urllib2.HTTPError as e:
+            print e
             response = e.read()
         return response
 
