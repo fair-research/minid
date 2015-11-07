@@ -59,7 +59,7 @@
 
         <div class="titleClass">Locations:</div>
         {% for location in data.locations %}
-        <div class="valueClass"><a href="https://www.globus.org/xfer/StartTransfer?origin={{ location.uri|urlencode() }}">{{ location.uri}}</a></div>
+        <div class="valueClass"><a href="{{ location.link }}">{{ location.uri}}</a></div>
         {% endfor %}
         <div class="titleClass">Titles:</div>
         {% for title in data.titles %}

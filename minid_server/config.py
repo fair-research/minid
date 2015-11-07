@@ -1,6 +1,6 @@
 class BaseConfig(object):
-    DEBUG = False
-    TESTING = False
+    DEBUG = True
+    TESTING = True
     
     SQLALCHEMY_DATABASE_URI = "sqlite:////tmp/minid.db"
 

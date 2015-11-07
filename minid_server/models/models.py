@@ -1,6 +1,6 @@
 from flask import Flask
 from flask.ext.sqlalchemy import SQLAlchemy
-
+import urllib
 from app import db
 
 class Miniduser(db.Model):
@@ -73,7 +73,12 @@ class Location(db.Model):
         self.created = created
 
     def get_json(self):
+        link = self.uri
+        if not self.uri.startswith("http"):
+            ep = self.uri.rsplit('/',1)[0]
+            link = "https://www.globus.org/xfer/StartTransfer?origin=%s" % urllib.quote(ep)
         return {"uri" : self.uri,
+                "link" : link,
                 "created" : self.created,
                 "creator" : self.miniduser.name}
 

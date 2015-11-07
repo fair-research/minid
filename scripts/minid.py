@@ -17,6 +17,7 @@ def parse_cli():
     parser = ArgumentParser(description=description)
     parser.add_argument('name', help="file or identifier to retrieve information about or register")
     parser.add_argument('--register', action="store_true", help="Register the file")
+    parser.add_argument('--json', action="store_true", help="Return output as JSON")
     parser.add_argument('--title', help="Title of named file")
     parser.add_argument('--config', default='%s/.minid/minid-config.cfg' %  os.path.expanduser('~'))
     return parser.parse_args()
@@ -51,17 +52,20 @@ def entity_json(username, orcid, checksum, file_path, title):
         entity["title"] = title
     return entity
 
-def print_entity(entity):
-    print "Identifier: %s" % entity["identifier"]
-    print "Created by: %s (%s)" % (entity["creator"], entity["orcid"])
-    print "Created: %s" % entity["created"]
-    print "Checksum: %s" % entity["checksum"]
-    print "Locations:"
-    for l in entity["locations"]:
-        print "  %s - %s" % (l["creator"], l["uri"])
-    print "Title:"
-    for t in entity["titles"]:
-        print "  %s - %s" % (t["creator"], t["title"])
+def print_entity(entity, json):
+    if json:
+        print entity
+    else:
+        print "Identifier: %s" % entity["identifier"]
+        print "Created by: %s (%s)" % (entity["creator"], entity["orcid"])
+        print "Created: %s" % entity["created"]
+        print "Checksum: %s" % entity["checksum"]
+        print "Locations:"
+        for l in entity["locations"]:
+            print "  %s - %s" % (l["creator"], l["uri"])
+        print "Title:"
+        for t in entity["titles"]:
+            print "  %s - %s" % (t["creator"], t["title"])
 
 def main():
     args = parse_cli()
@@ -84,6 +88,9 @@ def main():
         entity = get_entity(server, checksum)
     else: 
         entity = get_entity(server, args.name)
+        if entity is None: 
+            print "No file registered with name %s" % args.name
+            return
         checksum = entity["checksum"]
 
     if args.register:
@@ -96,7 +103,7 @@ def main():
             print "Created new minid: %s" % result["identifier"]
     else:
         if entity:
-            print_entity(entity)
+            print_entity(entity, args.json)
         else:
             print "File is not named. Use --register to create a name for this file."
 
