@@ -8,16 +8,16 @@ import urllib
 import urllib2
 from os.path import join
 
-from app import app
 
 class EZIDClient():
-    def __init__(self):
+    def __init__(self, server, username, password, scheme, shoulder):
         authHandler = urllib2.HTTPBasicAuthHandler()
-        authHandler.add_password("EZID", app.config["EZID_SERVER"], app.config["EZID_USERNAME"], app.config["EZID_PASSWORD"])
+        authHandler.add_password("EZID", server, username, password)
+
         self.opener = urllib2.build_opener(authHandler)
-        self.scheme = app.config["EZID_SCHEME"]
-        self.shoulder = app.config["EZID_SHOULDER"]
-        self.server = app.config["EZID_SERVER"]
+        self.scheme = scheme
+        self.shoulder = shoulder
+        self.server = server
 
     def make_anvl(self, metadata):
         def escape(s):

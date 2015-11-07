@@ -7,7 +7,12 @@ from app import app, db
 
 def create_ark(creator, created, title):
     print "Creating ARK"
-    client = EZIDClient()
+    client = EZIDClient(app.config["EZID_SERVER"], 
+            app.config["EZID_USERNAME"], 
+            app.config["EZID_PASSWORD"], 
+            app.config["EZID_SCHEME"], 
+            app.config["EZID_SHOULDER"])
+    
     data = {"erc.who" : creator, "erc.what" : title, "erc.when" : created }
 
     response = client.mint_identifier(data)
