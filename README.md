@@ -26,4 +26,4 @@ The CLI supports the following simple operations:
 Landing pages are accessible via the minid website: minid.bd2k.org/minid/<identifier>. 
 
 ## More information
-More information about the project can be found at: minid.bd2k.org
+More information about the project can be found at: [minid.bd2k.org](http://minid.bd2k.org/)
