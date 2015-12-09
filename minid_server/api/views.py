@@ -5,9 +5,21 @@ import datetime
 from providers import EZIDClient
 from app import app, db
 
-def create_ark(creator, created, title):
+# When using the test capabilities we append TEST to the checksum to avoid 
+# colusion with the real namespace
+TEST_CHECKSUM_PREFIX = "TEST-"
+
+def create_ark(creator, created, title, test):
     print "Creating ARK"
-    client = EZIDClient(app.config["EZID_SERVER"], 
+    if test:
+        print "Using test EZID namespace"
+        client = EZIDClient(app.config["TEST_EZID_SERVER"],
+            app.config["TEST_EZID_USERNAME"],
+            app.config["TEST_EZID_PASSWORD"],
+            app.config["TEST_EZID_SCHEME"],
+            app.config["TEST_EZID_SHOULDER"])
+    else:
+        client = EZIDClient(app.config["EZID_SERVER"], 
             app.config["EZID_USERNAME"], 
             app.config["EZID_PASSWORD"], 
             app.config["EZID_SCHEME"], 
@@ -30,10 +42,15 @@ def request_wants_json():
 
 @app.route('/minid/landingpage/<path:path>', methods=['GET'])
 def get_entity(path):
-    print "Getting landing page %s" % path
+
+    test = request.args.get("test") in ["True", "true", "t", "T"]
+    print "Getting landing page %s (%s)" % (path, test)
     entity = Entity.query.filter_by(identifier=path).first()
-    if entity is None: 
-        entity = Entity.query.filter_by(checksum=path).first()
+    if entity is None:
+        if test:
+            entity = Entity.query.filter_by(checksum="%s%s" % (TEST_CHECKSUM_PREFIX, path)).first()
+        else:
+            entity = Entity.query.filter_by(checksum=path).first()
     if entity is None: 
         return "Could not locate entity %s" % path, 404
     if request_wants_json():
@@ -53,6 +70,9 @@ def create_entity():
     checksum = request.json["checksum"] 
     username = request.json["username"]
     orcid = request.json["orcid"]
+    test = False
+    if "test" in request.json:
+        test = request.json["test"]
     created = datetime.datetime.now()
     
     user = Miniduser.query.filter_by(name=username).first()
@@ -61,14 +81,19 @@ def create_entity():
         user = Miniduser(username, orcid)
         db.session.add(user)
 
+    if test:
+        checksum = "%s%s" % (TEST_CHECKSUM_PREFIX, checksum)
     entity = Entity.query.filter_by(checksum=checksum).first()
 
     if entity:
         print "Entity (%s) exists" % entity.identifier
     else:
-        identifier = create_ark(username, request.json['title'], str(created))
+        identifier = create_ark(username, request.json['title'], str(created), test)
         print "Created new identifier %s" % str(identifier)
-        entity = Entity(user, str(identifier), checksum, created)
+        if test:
+            entity = Entity(user, str(identifier), checksum, created)
+        else:
+            entity = Entity(user, str(identifier), checksum, created)
         db.session.add(entity)
 
     if 'title' in request.json:

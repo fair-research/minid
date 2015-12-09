@@ -13,6 +13,12 @@ class BaseConfig(object):
     EZID_USERNAME = "apitest"
     EZID_PASSWORD = "apitest"
 
+    TEST_EZID_SERVER =  "https://ezid.cdlib.org"
+    TEST_EZID_SCHEME = "ark:/"
+    TEST_EZID_SHOULDER = "99999/fk4"
+    TEST_EZID_USERNAME = "apitest"
+    TEST_EZID_PASSWORD = "apitest"
+
 class ProdConfig(BaseConfig):
     DEBUG = False
     TESTING = False
@@ -27,3 +33,9 @@ class ProdConfig(BaseConfig):
     EZID_SHOULDER = ""
     EZID_USERNAME = ""
     EZID_PASSWORD = ""
+
+    TEST_EZID_SERVER =  "https://ezid.cdlib.org"
+    TEST_EZID_SCHEME = "ark:/"
+    TEST_EZID_SHOULDER = "99999/fk4"
+    TEST_EZID_USERNAME = "apitest"
+    TEST_EZID_PASSWORD = "apitest"

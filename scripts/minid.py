@@ -17,6 +17,7 @@ def parse_cli():
     parser = ArgumentParser(description=description)
     parser.add_argument('name', help="file or identifier to retrieve information about or register")
     parser.add_argument('--register', action="store_true", help="Register the file")
+    parser.add_argument('--test', action="store_true", help="Run a test of this registration using the test minid namespace")
     parser.add_argument('--json', action="store_true", help="Return output as JSON")
     parser.add_argument('--title', help="Title of named file")
     parser.add_argument('--config', default='%s/.minid/minid-config.cfg' %  os.path.expanduser('~'))
@@ -34,8 +35,11 @@ def compute_checksum(open_file, algorithm, block_size=65536):
         buf = open_file.read(block_size)
     return algorithm.hexdigest()
 
-def get_entity(server, name):
-    r = requests.get("%s/landingpage/%s" % (server, name), headers={"Accept" : "application/json"})
+def get_entity(server, name, test):
+    query = ""
+    if test:
+        query = "?test=true"
+    r = requests.get("%s/landingpage/%s%s" % (server, name, query), headers={"Accept" : "application/json"})
     if r.status_code == 404:
         return None
     return r.json()
@@ -44,8 +48,10 @@ def create_entity(server, entity):
     r = requests.post(server, json=entity, headers={"Accept" : "application/json"})
     return r.json()
 
-def entity_json(username, orcid, checksum, file_path, title):
+def entity_json(username, orcid, checksum, file_path, title, test):
     entity = {"username" :  username, "orcid": orcid, "checksum": checksum}
+    if test:
+        entity ["test"] = test
     if file_path:
         entity["location"] = file_path
     if title: 
@@ -85,9 +91,9 @@ def main():
         file_path = os.path.abspath(args.name)
         open_file = open(args.name)
         checksum = compute_checksum(open_file, hashlib.sha256())
-        entity = get_entity(server, checksum)
+        entity = get_entity(server, checksum, args.test)
     else: 
-        entity = get_entity(server, args.name)
+        entity = get_entity(server, args.name, False)
         if entity is None: 
             print "No file registered with name %s" % args.name
             return
@@ -98,7 +104,7 @@ def main():
             print "Appending to registered entity %s" % entity["identifier"]
         else: 
             print "Creating new name"
-        result = create_entity(server, entity_json(username, orcid, checksum, "%s%s" % (local_server, file_path), title))
+        result = create_entity(server, entity_json(username, orcid, checksum, "%s%s" % (local_server, file_path), title, args.test))
         if result: 
             print "Created new minid: %s" % result["identifier"]
     else:
