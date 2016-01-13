@@ -17,11 +17,11 @@ orcid: <Orcid>
 
 ## Usage
 
-The CLI supports the following simple operations: 
+The CLI supports the following simple operations (Note: the test flag will create names in a test namespace that will be removed periodically, remove the test flag for creating production minids.): 
 
-* Create a new identifier: `minid.py <file_name> --register [--title <title>]`
-* Retrieve metadata about a file: `minid.py <file_name>`
-* Retrieve metadata about an identifier: `minid.py <identifier>`
+* Create a new identifier: `minid.py <file_name> --test --register [--title <title>]`
+* Retrieve metadata about a file: `minid.py <file_name> --test` 
+* Retrieve metadata about an identifier: `minid.py <identifier> --test`
 
 Landing pages are accessible via the minid website: minid.bd2k.org/minid/<identifier>. 
 
