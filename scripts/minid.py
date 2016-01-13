@@ -20,6 +20,7 @@ def parse_cli():
     parser.add_argument('--test', action="store_true", help="Run a test of this registration using the test minid namespace")
     parser.add_argument('--json', action="store_true", help="Return output as JSON")
     parser.add_argument('--title', help="Title of named file")
+    parser.add_argument('--url', help="Accessible URL of named file")
     parser.add_argument('--config', default='%s/.minid/minid-config.cfg' %  os.path.expanduser('~'))
     return parser.parse_args()
 
@@ -99,12 +100,17 @@ def main():
             return
         checksum = entity["checksum"]
 
+    accessible_path = "%s%s" % (local_server, file_path)
+    if args.url:
+        accessible_path = args.url
+    
     if args.register:
         if entity:
             print "Appending to registered entity %s" % entity["identifier"]
         else: 
             print "Creating new name"
-        result = create_entity(server, entity_json(username, orcid, checksum, "%s%s" % (local_server, file_path), title, args.test))
+        result = create_entity(server, entity_json(username, orcid, checksum, 
+            accessible_path, title, args.test))
         if result: 
             print "Created new minid: %s" % result["identifier"]
     else:
