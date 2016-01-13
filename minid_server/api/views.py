@@ -9,7 +9,7 @@ from app import app, db
 # colusion with the real namespace
 TEST_CHECKSUM_PREFIX = "TEST-"
 
-def create_ark(creator, created, title, test):
+def create_ark(creator, title, created, test):
     print "Creating ARK"
     if test:
         print "Using test EZID namespace"
