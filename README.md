@@ -9,7 +9,7 @@ To use the CLI you will need create a configuration file with your details in `~
 
 ```
 [general]
-minid_server: http://mind.bd2k.org/minid
+minid_server: http://minid.bd2k.org/minid
 local_server: <Globus endpoint or HTTP server>
 username: <Name>
 orcid: <Orcid>
