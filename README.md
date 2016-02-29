@@ -5,25 +5,32 @@ This project aims to create a Minimal Viable Identifier (MVI). An identifier tha
 The CLI can be installed using Python setuptools. 
 
 ## Configuration
-To use the CLI you will need create a configuration file with your details in `~/.minid/minid-config.cfg`
+Before using the API you first need to validate your email address. Enter the following command: 
+
+`minid.py --register_user --email <email> --name <name> [--orcid <orcid>]`
+
+A unique code will be sent to your email address. You must present this code along with your 
+email address when accessing the API. As a convenience you can specify this information in 
+a minid configuration file (`~/.minid/minid-config.cfg`)
 
 ```
 [general]
 minid_server: http://minid.bd2k.org/minid
 local_server: <Globus endpoint or HTTP server>
-username: <Name>
-orcid: <Orcid>
+email: <Emaile>
+code: <Code>
 ```
 
 ## Usage
 
 The CLI supports the following simple operations (Note: the test flag will create names in a test namespace that will be removed periodically, remove the test flag for creating production minids.): 
 
-* Create a new identifier: `minid.py <file_name> --test --register [--title <title>]`
-* Retrieve metadata about a file: `minid.py <file_name> --test` 
-* Retrieve metadata about an identifier: `minid.py <identifier> --test`
+* Create a new identifier: `minid.py --test --register [--title <title>] <file_name>`
+* Retrieve metadata about a file: `minid.py --test <file_name>` 
+* Retrieve metadata about an identifier: `minid.py --test <identifier>`
+* Find out all minid options: `minid.py -h`
 
-Landing pages are accessible via the minid website: minid.bd2k.org/minid/<identifier>. 
+Landing pages are accessible via the minid website: minid.bd2k.org/minid/landingpage/<identifier>. 
 
 ## More information
 More information about the project can be found at: [minid.bd2k.org](http://minid.bd2k.org/)
