@@ -5,15 +5,19 @@ from app import db
 
 class Miniduser(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(80), unique=True)
-    orcid = db.Column(db.String(19), unique=True)
+    name = db.Column(db.String(255))
+    orcid = db.Column(db.String(19))
+    email = db.Column(db.String(255), unique=True)
+    code = db.Column(db.String(255), unique=True)
 
-    def __init__(self, name, orcid):
+    def __init__(self, name, orcid, email, code):
         self.name = name
         self.orcid = orcid
+        self.email = email
+        self.code = code
 
     def get_json(self):
-        return {"name" : self.name, "orcid" : self.orcid }
+        return {"name" : self.name, "orcid" : self.orcid, "email" : self.email }
 
     def __repr__(self):
         return '<User %r>' % self.name
@@ -74,7 +78,7 @@ class Location(db.Model):
 
     def get_json(self):
         link = self.uri
-        if not self.uri.startswith("http"):
+        if link and not link.startswith("http"):
             ep = self.uri.rsplit('/',1)[0]
             link = "https://www.globus.org/xfer/StartTransfer?origin=%s" % urllib.quote(ep)
         return {"uri" : self.uri,

@@ -1,9 +1,9 @@
-from flask import jsonify, make_response, request, render_template
+from flask import jsonify, make_response, request, render_template, abort
 from models import *
 import uuid
 import datetime
 from providers import EZIDClient
-from app import app, db
+from app import app, db, minid_email
 
 # When using the test capabilities we append TEST to the checksum to avoid 
 # colusion with the real namespace
@@ -24,9 +24,14 @@ def create_ark(creator, title, created, test):
             app.config["EZID_PASSWORD"], 
             app.config["EZID_SCHEME"], 
             app.config["EZID_SHOULDER"])
-    
-    data = {"erc.who" : creator, "erc.what" : title, "erc.when" : created }
-
+   
+    if title is None: 
+        title = ""
+    #data = {"erc.who" : creator, "erc.what" : title, "erc.when" : str(created)} 
+    data= {"_profile" : "datacite", "datacite.creator" : creator, "datacite.title" :  title, 
+            "datacite.publicationyear" : str(created.year),
+            "datacite.publisher": "BD2K Minid"}#, "datacite.resourcetype" : "dataset"}
+   
     response = client.mint_identifier(data)
     print "minted %s" % app.config["HOSTNAME"] 
     data ["_target"] = "%s/%s" % (app.config["LANDING_PAGE"], response["identifier"])
@@ -42,9 +47,9 @@ def request_wants_json():
 
 @app.route('/minid/landingpage/<path:path>', methods=['GET'])
 def get_entity(path):
-
     test = request.args.get("test") in ["True", "true", "t", "T"]
     print "Getting landing page %s (%s)" % (path, test)
+    
     entity = Entity.query.filter_by(identifier=path).first()
     if entity is None:
         if test:
@@ -57,29 +62,44 @@ def get_entity(path):
         return jsonify(entity.get_json())
     else:
         return render_template("entity.html", data=entity.get_json())
-
+#
+# {
+#  checksum: xxx
+#  location: xxx
+#  title: xxx
+#  email: xxx
+#  code: xxx
+#  test: True
+# }
 @app.route('/minid', methods=['GET', 'POST'])
 def create_entity():
     if request.method == 'GET':
         return render_template("index.html")
     
-    if not request.json or not 'checksum' in request.json:
+    if not request.json:
         print "Missing checksum in POST %s" % request.json
         abort(400)
-    entity, title, location, orcid = None, None, None, None
+
+    if not 'checksum' in request.json:
+        print "Missing checksum and/or user details (email, code)"
+        abort(400)
+
+    entity, title, location = None, None, None
     checksum = request.json["checksum"] 
-    username = request.json["username"]
-    orcid = request.json["orcid"]
+    email = request.json["email"]
+    code = request.json["code"]
+    title = request.json.get("title")
+    location = request.json.get("location")
+
     test = False
     if "test" in request.json:
         test = request.json["test"]
     created = datetime.datetime.now()
     
-    user = Miniduser.query.filter_by(name=username).first()
+    user = Miniduser.query.filter_by(email=email, code=code).first()
     if not user:
-        print "User doesn't exist. Creating %s" % username
-        user = Miniduser(username, orcid)
-        db.session.add(user)
+        print "User %s with code %s doesn't exist." % (email, code)
+        abort(400)
 
     if test:
         checksum = "%s%s" % (TEST_CHECKSUM_PREFIX, checksum)
@@ -88,7 +108,7 @@ def create_entity():
     if entity:
         print "Entity (%s) exists" % entity.identifier
     else:
-        identifier = create_ark(username, request.json['title'], str(created), test)
+        identifier = create_ark(user.name, title, created, test)
         print "Created new identifier %s" % str(identifier)
         if test:
             entity = Entity(user, str(identifier), checksum, created)
@@ -96,15 +116,57 @@ def create_entity():
             entity = Entity(user, str(identifier), checksum, created)
         db.session.add(entity)
 
-    if 'title' in request.json:
-        title = Title(entity, user, request.json['title'], created)
-        db.session.add(title)
+    # Get existing locations and titles to avoid duplicates
+    titles = [t.title for t in entity.titles]
     locations = [l.uri for l in entity.locations]
+
+    if title and title not in titles:
+        title = Title(entity, user, title, created)
+        db.session.add(title)
     
-    if 'location' in request.json and request.json['location'] not in locations:
-        location = Location(entity, user, request.json['location'], created)
+    if location and location not in locations:
+        location = Location(entity, user, location, created)
         db.session.add(location)
 
     db.session.commit()
     return jsonify({'identifier': entity.identifier}), 201
+
+
+# Register a new user.. 
+# {
+#  name: xxx
+#  email: xxx
+#  orcid: xx
+# }
+@app.route('/minid/user', methods=['POST','PUT'])
+def register_user():
+    if not request.json:
+        print "Request is not JSON"
+        abort(400)
+
+    if not 'name' in request.json or not 'email' in request.json:
+        print "Malformed request missing name or email %s" % request.json
+        abort(400)
+                                            
+    email = request.json["email"]
+    name = request.json["name"]
+    orcid = request.json.get("orcid")
+
+    code = str(uuid.uuid4())
+
+    user = Miniduser.query.filter_by(email=email).first()
+    if user is None: 
+        user = Miniduser(name, orcid, email, code)
+        db.session.add(user)
+    else: 
+        print "Updating existing user."
+        user.name = name
+        user.orcid = orcid
+        user.code = code
+
+    db.session.commit()
+    
+    minid_email.send_email(email, code)
+
+    return jsonify(user.get_json()), 201
 

@@ -13,11 +13,15 @@ class BaseConfig(object):
     EZID_USERNAME = "apitest"
     EZID_PASSWORD = "apitest"
 
+
     TEST_EZID_SERVER =  "https://ezid.cdlib.org"
     TEST_EZID_SCHEME = "ark:/"
     TEST_EZID_SHOULDER = "99999/fk4"
     TEST_EZID_USERNAME = "apitest"
     TEST_EZID_PASSWORD = "apitest"
+
+    AWS_ACCESS_KEY_ID = ""
+    AWS_SECRET_ACCESS_KEY = ""
 
 class ProdConfig(BaseConfig):
     DEBUG = False
@@ -39,3 +43,6 @@ class ProdConfig(BaseConfig):
     TEST_EZID_SHOULDER = "99999/fk4"
     TEST_EZID_USERNAME = "apitest"
     TEST_EZID_PASSWORD = "apitest"
+
+    AWS_ACCESS_KEY_ID = ""
+    AWS_SECRET_ACCESS_KEY = ""
