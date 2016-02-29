@@ -54,7 +54,6 @@ def get_entity(server, name, test):
     return r.json()
 
 def create_entity(server, entity):
-    print "Creating entity %s" % entity
     r = requests.post(server, json=entity, headers={"Accept" : "application/json"})
     if r.status_code in [200, 201]:
         return r.json()
