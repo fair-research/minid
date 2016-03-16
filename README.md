@@ -16,8 +16,9 @@ a minid configuration file (`~/.minid/minid-config.cfg`)
 ```
 [general]
 minid_server: http://minid.bd2k.org/minid
-local_server: <Globus endpoint or HTTP server>
-email: <Emaile>
+user: <Name>
+email: <Email>
+orcid: <optional Orcid>
 code: <Code>
 ```
 
