@@ -13,12 +13,14 @@ body {
 .bdds-navbar{
     margin-bottom: 0px;
 }
+
 .bdds-brand{
     font-size: 30px;
     margin-top:6px;
+
 }
 .bdds-big{
-    font-family: "Unica One", cursive;
+    font-family: "Unica One";
     color: #b20000;
 }
 
