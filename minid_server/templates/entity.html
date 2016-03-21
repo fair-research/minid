@@ -13,6 +13,7 @@
 
     <!-- Custom styles -->
     <link href="{{ url_for('static', filename='css/starter-template.css')}}" rel="stylesheet">
+    <!--  <link href="/static/css/starter-template.css" rel="stylesheet"> -->
 
     <style>
 .titleClass{
@@ -25,10 +26,13 @@
 </head>
 
 <body>
-    <nav class="bdds-navbar navbar navbar-static-top navbar-fixed-top navbar-inverse">
+    <nav class="bdds-navbar navbar navbar-static-top navbar-fixed-top">
     <div class="container">
         <div class="navbar-header">
-            <a class="navbar-brand" href="/"><img style="max-width:80px; margin-top: -8px;" src="{{ url_for('static', filename='images/bdds-logo.png')}}"></a>
+            <a class="navbar-brand" href="/">
+                <img style="max-width:80px; margin-top: -8px;" src="/static/images/bdds-logo.png')}}">
+                <!-- <img style="max-width:80px; margin-top: -8px;" src="{{ url_for('static', filename='images/bdds-logo.png">-->
+            </a>
         </div>
         <div class="bdds-brand collapse navbar-collapse">
             <span class="bdds-big">BIG DATA</span>
@@ -40,7 +44,10 @@
     <nav class="navbar navbar-default"> <!-- navbar-fixed-top"> --!>
         <div class="container">
             <div class="navbar-header">
-                <a class="navbar-brand" href="/"><img style="max-width:100px; margin-top: -16px;" src="{{ url_for('static', filename='images/minid-logo.png')}}"></a>
+                <a class="navbar-brand" href="/">
+                  <img style="max-width:100px; margin-top: -16px;" src="{{ url_for('static', filename='images/minid-logo.png')}}">
+                  <!-- <img style="max-width:100px; margin-top: -16px;" src="{{ url_for('static', filename='images/minid-logo.png')}}"> -->
+                </a>
             </div>
             <div id="navbar" class="collapse navbar-collapse">
                 <ul class="nav navbar-nav">
