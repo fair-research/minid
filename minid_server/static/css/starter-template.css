@@ -7,5 +7,28 @@ body {
 }
 
 .text-center {
-    text-align:center
+    text-align:center;
+}
+
+.bdds-navbar{
+    margin-bottom: 0px;
+}
+.bdds-brand{
+    font-size: 30px;
+    margin-top:6px;
+}
+.bdds-big{
+    font-family: "Unica One", cursive;
+    color: #b20000;
+}
+
+.bdds-for{
+    font-family: "Garamond",serif;
+    font-style : italic;
+    color: #888;
+}
+
+.bdds-discover{
+    font-family: "Roboto", sans-serif;
+    color: white;
 }

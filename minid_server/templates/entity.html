@@ -22,20 +22,24 @@
     margin-bottom: 10px;
 }
     </style>
-    ~       
 </head>
 
 <body>
-
-    <nav class="navbar navbar-default navbar-fixed-top">
+    <nav class="bdds-navbar navbar navbar-static-top navbar-fixed-top navbar-inverse">
+    <div class="container">
+        <div class="navbar-header">
+            <a class="navbar-brand" href="/"><img style="max-width:80px; margin-top: -8px;" src="{{ url_for('static', filename='images/bdds-logo.png')}}"></a>
+        </div>
+        <div class="bdds-brand collapse navbar-collapse">
+            <span class="bdds-big">BIG DATA</span>
+            <span class="bdds-for"> for</span>
+            <span class="bdds-discover"> DISCOVERY SCIENCE</span>
+        </div>
+    </div>
+    </nav>
+    <nav class="navbar navbar-default"> <!-- navbar-fixed-top"> --!>
         <div class="container">
             <div class="navbar-header">
-                <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
-                    <span class="sr-only">Toggle navigation</span>
-                    <span class="icon-bar"></span>
-                    <span class="icon-bar"></span>
-                    <span class="icon-bar"></span>
-                </button>
                 <a class="navbar-brand" href="/"><img style="max-width:100px; margin-top: -16px;" src="{{ url_for('static', filename='images/minid-logo.png')}}"></a>
             </div>
             <div id="navbar" class="collapse navbar-collapse">
