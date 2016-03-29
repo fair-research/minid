@@ -1,3 +1,4 @@
+!![minid](https://raw.githubusercontent.com/ini-bdds/minid/master/minid_server/static/images/minid-logo.png)
 # minid
 This project aims to create a Minimal Viable Identifier (MVI). An identifier that is sufficiently simple to make creation and use trivial, while still having enough substance to make data easily findable, accessible, interoperable, and reusable (FAIR). 
 
