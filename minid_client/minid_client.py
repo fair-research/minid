@@ -1,9 +1,13 @@
-from ConfigParser import ConfigParser
-import hashlib
+import sys
 import os
 import requests
 import logging
+import hashlib
 
+if sys.version_info > (3,):
+    from configparser import ConfigParser
+else:
+    from ConfigParser import ConfigParser
 
 DEFAULT_CONFIG_PATH = os.path.join(os.path.expanduser('~'), '.minid')
 DEFAULT_CONFIG_FILE = os.path.join(DEFAULT_CONFIG_PATH, 'minid-config.cfg')
@@ -43,7 +47,7 @@ def create_default_config():
 
 def compute_checksum(file_path, algorithm=hashlib.sha256(), block_size=65536):
     logger.info("Computing checksum for %s using %s" % (file_path, algorithm))
-    with open(os.path.abspath(file_path)) as open_file:
+    with open(os.path.abspath(file_path), 'rb') as open_file:
         buf = open_file.read(block_size)
         while len(buf) > 0:
             algorithm.update(buf)
@@ -85,18 +89,18 @@ def entity_json(email, code, checksum, url, title, test):
 
 def print_entity(entity, json):
     if json:
-        print entity
+        print(entity)
     else:
-        print "Identifier: %s" % entity["identifier"]
-        print "Created by: %s (%s)" % (entity["creator"], entity["orcid"])
-        print "Created: %s" % entity["created"]
-        print "Checksum: %s" % entity["checksum"]
-        print "Locations:"
+        print("Identifier: %s" % entity["identifier"])
+        print("Created by: %s (%s)" % (entity["creator"], entity["orcid"]))
+        print("Created: %s" % entity["created"])
+        print("Checksum: %s" % entity["checksum"])
+        print("Locations:")
         for l in entity["locations"]:
-            print "  %s - %s" % (l["creator"], l["uri"])
-        print "Title:"
+            print("  %s - %s" % (l["creator"], l["uri"]))
+        print("Title:")
         for t in entity["titles"]:
-            print "  %s - %s" % (t["creator"], t["title"])
+            print("  %s - %s" % (t["creator"], t["title"]))
 
 
 def register_user(server, email, name, orcid):

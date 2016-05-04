@@ -1,8 +1,8 @@
 #!/usr/bin/python
 
-from minid_client import *
 from argparse import ArgumentParser
 import os
+import minid_client
 
 # Usage 
 # minid.py <file_path> --- will give you info on file if it has been registered
@@ -50,7 +50,7 @@ def main():
 
     # if we got this far we *must* have a filename (or identifier) arg
     if not args.filename:
-        print "Either a file name or an identifier must be specified."
+        print("Either a file name or an identifier must be specified.")
         return
 
     # see if this file or name exists
@@ -61,14 +61,14 @@ def main():
     else:
         entity = minid_client.get_entity(server, args.filename, False)
         if entity is None: 
-            print "No entity registered with identifier: %s" % args.filename
+            print("No entity registered with identifier: %s" % args.filename)
             return
         checksum = entity["checksum"]
    
     # register file or display info about the entity
     if args.register:
         if not file_exists:
-            print "Only local files can be registered"
+            print("Only local files can be registered")
             return
         else:
             minid_client.register_entity(server, entity, checksum,
@@ -79,7 +79,7 @@ def main():
         if entity:
             minid_client.print_entity(entity, args.json)
         else:
-            print "File is not named. Use --register to create a name for this file."
+            print("File is not named. Use --register to create a name for this file.")
 
 if __name__ == '__main__':
     main()
