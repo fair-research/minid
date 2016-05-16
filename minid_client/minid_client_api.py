@@ -3,6 +3,7 @@ import os
 import requests
 import logging
 import hashlib
+import json
 
 if sys.version_info > (3,):
     from configparser import ConfigParser
@@ -87,9 +88,9 @@ def entity_json(email, code, checksum, url, title, test):
     return entity
 
 
-def print_entity(entity, json):
-    if json:
-        print(entity)
+def print_entity(entity, as_json):
+    if as_json:
+        print(json.dumps(entity))
     else:
         print("Identifier: %s" % entity["identifier"])
         print("Created by: %s (%s)" % (entity["creator"], entity["orcid"]))
