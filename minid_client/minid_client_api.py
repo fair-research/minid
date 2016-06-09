@@ -57,13 +57,13 @@ def compute_checksum(file_path, algorithm=hashlib.sha256(), block_size=65536):
     return algorithm.hexdigest()
 
 
-def get_entity(server, name, test):
+def get_entities(server, name, test):
     logger.info("Checking if the %sentity %s already exists on the server: %s" %
                 ("TEST " if test else "", name, server))
     query = ""
     if test:
         query = "?test=true"
-    r = requests.get("%s/landingpage/%s%s" % (server, name, query), headers={"Accept": "application/json"})
+    r = requests.get("%s/%s%s" % (server, name, query), headers={"Accept": "application/json"})
     if r.status_code == 404:
         return None
     return r.json()
@@ -77,12 +77,12 @@ def create_entity(server, entity):
         logger.error("Error creating entity (%s) -- check parameters or config file for invalid values" % r.status_code)
 
 
-def entity_json(email, code, checksum, url, title, test):
+def entity_json(email, code, checksum, locations, title, test):
     entity = {"email":  email, "code": code, "checksum": checksum}
     if test:
         entity["test"] = test
-    if url:
-        entity["location"] = url
+    if locations:
+        entity["locations"] = locations
     if title: 
         entity["title"] = title
     return entity
@@ -96,6 +96,9 @@ def print_entity(entity, as_json):
         print("Created by: %s (%s)" % (entity["creator"], entity["orcid"]))
         print("Created: %s" % entity["created"])
         print("Checksum: %s" % entity["checksum"])
+        print("Status: %s" % entity["status"])
+        if entity["obsoleted_by"]:
+            print("Obsoleted by: %s" % entity["obsoleted_by"])
         print("Locations:")
         for l in entity["locations"]:
             print("  %s - %s" % (l["creator"], l["uri"]))
@@ -103,6 +106,10 @@ def print_entity(entity, as_json):
         for t in entity["titles"]:
             print("  %s - %s" % (t["creator"], t["title"]))
 
+def print_entities(entities, as_json):
+    for i, entity in entities.items():
+        print_entity(entity, as_json)
+        print("\n")
 
 def register_user(server, email, name, orcid):
     logger.info("Registering new user \"%s\" with email \"%s\"%s" %
@@ -114,14 +121,26 @@ def register_user(server, email, name, orcid):
     return r.json()
 
 
-def register_entity(server, entity, checksum, email, code, url='', title='', test=False):
-    if entity:
-        logger.info("Appending to registered entity %s" % entity["identifier"])
-    else: 
-        logger.info("Creating new identifier")
+def register_entity(server, checksum, email, code, url=None, title='', test=False):
+    logger.info("Creating new identifier")
 
     result = create_entity(server, entity_json(email, code, checksum, url, title, test))
 
     if result:
         logger.info("Created/updated minid: %s" % result["identifier"])
+
+def update_entity(server, name, entity, email, code):
+    if not entity:
+        logger.info("No entity found to update")
+        return None
+
+    entity['email'] = email
+    entity['code'] = code
+
+    r=requests.put("%s/%s" % (server, name), json=entity, headers={"Accept": "application/json"})
+
+    if r.status_code in [200, 201]:
+        return r.json()
+    else:
+        logger.error("Error updating entity (%s, %s) -- check parameters or config file for invalid values" % (r.status_code, r.text))
 

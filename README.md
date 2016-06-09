@@ -30,6 +30,7 @@ The CLI supports the following simple operations (Note: the test flag will creat
 * Create a new identifier: `minid.py --test --register [--title <title>] <file_name>`
 * Retrieve metadata about a file: `minid.py --test <file_name>` 
 * Retrieve metadata about an identifier: `minid.py --test <identifier>`
+* Update metadata about an identifier: minid.py --test --update [--title <title>] [--status <status>] [--obsoleted_by <minid>] [--locations <loc1> <loc2>] <identifier>
 * View all minid options: `minid.py -h`
 
 Landing pages are accessible via the minid website: minid.bd2k.org/minid/landingpage/<identifier>. 

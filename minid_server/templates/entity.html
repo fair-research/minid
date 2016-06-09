@@ -13,7 +13,7 @@
 
     <!-- Custom styles -->
     <link href="{{ url_for('static', filename='css/starter-template.css')}}" rel="stylesheet">
-    <!--  <link href="/static/css/starter-template.css" rel="stylesheet"> -->
+    <!-- <link href="/static/css/starter-template.css" rel="stylesheet"> -->
 
     <style>
 .titleClass{
@@ -30,8 +30,8 @@
     <div class="container">
         <div class="navbar-header">
             <a class="navbar-brand" href="/">
-                <img style="max-width:80px; margin-top: -8px;" src="/static/images/bdds-logo.png')}}">
-                <!-- <img style="max-width:80px; margin-top: -8px;" src="{{ url_for('static', filename='images/bdds-logo.png">-->
+                <!-- <img style="max-width:80px; margin-top: -8px;" src="/static/images/bdds-logo.png'"> -->
+                <img style="max-width:80px; margin-top: -8px;" src="{{ url_for('static', filename='images/bdds-logo.png">
             </a>
         </div>
         <div class="bdds-brand collapse navbar-collapse">
@@ -45,8 +45,8 @@
         <div class="container">
             <div class="navbar-header">
                 <a class="navbar-brand" href="/">
+                  <!-- <img style="max-width:100px; margin-top: -16px;" src="/static/images/minid-logo.png"> -->
                   <img style="max-width:100px; margin-top: -16px;" src="{{ url_for('static', filename='images/minid-logo.png')}}">
-                  <!-- <img style="max-width:100px; margin-top: -16px;" src="{{ url_for('static', filename='images/minid-logo.png')}}"> -->
                 </a>
             </div>
             <div id="navbar" class="collapse navbar-collapse">
@@ -67,7 +67,10 @@
         <div class="titleClass">Created:</div> <div class="valueClass">{{ data.created }}</div>
         <div class="titleClass">Creator:</div> <div class="valueClass">{{ data.creator }} (<a href="http://orcid.org/{{ data.orcid }}">{{ data.orcid }})</a></div>
         <div class="titleClass">Checksum:</div> <div class="valueClass">{{ data.checksum }}</div>
-
+        <div class="titleClass">Status:</div> <div class="valueClass">{{ data.status }}</div>
+        {% if data.obsoleted_by %}
+        <div class="titleClass">Obsoleted by:</div> <a href="http://n2t.net/{{ data.obsoleted_by }}"><div class="valueClass">{{ data.obsoleted_by }}</div></a>
+        {% endif %}
         <div class="titleClass">Locations:</div>
         {% for location in data.locations %}
         <div class="valueClass"><a href="{{ location.link }}">{{ location.uri}}</a></div>
