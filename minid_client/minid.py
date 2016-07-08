@@ -2,7 +2,7 @@
 
 from argparse import ArgumentParser
 import os
-from minid_client import minid_client_api as minid_client
+import minid_client_api as minid_client
 
 # Usage 
 # minid.py <file_path> --- will give you info on file if it has been registered
