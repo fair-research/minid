@@ -128,6 +128,7 @@ def register_entity(server, checksum, email, code, url=None, title='', test=Fals
 
     if result:
         logger.info("Created/updated minid: %s" % result["identifier"])
+        return result["identifier"]
 
 def update_entity(server, name, entity, email, code):
     if not entity:
