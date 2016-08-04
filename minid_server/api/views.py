@@ -247,10 +247,11 @@ def create_entity():
         title = Title(entity, user, title, created)
         db.session.add(title)
     
-    for l in locations:
-        if l and l not in existing_locations:
-            location = Location(entity, user, l, created)
-            db.session.add(location)
+    if locations:
+        for l in locations:
+            if l and l not in existing_locations:
+                location = Location(entity, user, l, created)
+                db.session.add(location)
 
     db.session.commit()
     return jsonify({'identifier': entity.identifier}), 201
