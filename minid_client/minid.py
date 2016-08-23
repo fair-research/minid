@@ -107,7 +107,7 @@ def main():
             updated_entity = minid_client.update_entity(server, args.filename, entity,
                                        args.email if args.email else config["email"],
                                        args.code if args.code else config["code"])
-            print updated_entity
+            print (updated_entity)
     else:
         if entities:
             minid_client.print_entities(entities, args.json)
