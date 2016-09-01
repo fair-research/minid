@@ -216,14 +216,16 @@ def create_entity():
         print "Missing checksum"
         abort(400)
 
-    entity, title, location = None, None, None
+    entity, title, location, content_key = None, None, None, None
     checksum = request.json["checksum"] 
     email = request.json["email"]
     code = request.json["code"]
     title = request.json.get("title")
     locations = request.json.get("locations")
     status = "ACTIVE"
-    content_key = request.json["content_key"]
+
+    if "content_key" in request.json:
+        content_key = request.json["content_key"]
 
     test = False
     if "test" in request.json:

@@ -86,7 +86,7 @@ class Location(db.Model):
 
     def get_json(self):
         link = self.uri
-        if link and not link.startswith("http"):
+        if link and not link.startswith("http") and not link.startswith("ftp"):
             ep = self.uri.rsplit('/',1)[0]
             link = "https://www.globus.org/xfer/StartTransfer?origin=%s" % urllib.quote(ep)
         return {"uri" : self.uri,
