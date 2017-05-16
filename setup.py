@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='minid',
-    version='1.0',
+    version='1.1',
     description='BD2K Minimum Viable Identifier',
     author='Kyle Chard',
     author_email='chard@uchicago.edu',

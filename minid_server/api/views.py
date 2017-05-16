@@ -11,9 +11,9 @@ TEST_CHECKSUM_PREFIX = "TEST-"
 VALID_STATUS = ["ACTIVE", "TOMBSTONE"]
 
 def create_ark(creator, title, created, test):
-    print "Creating ARK"
+    print("Creating ARK")
     if test:
-        print "Using test EZID namespace"
+        print("Using test EZID namespace")
         client = EZIDClient(app.config["TEST_EZID_SERVER"],
             app.config["TEST_EZID_USERNAME"],
             app.config["TEST_EZID_PASSWORD"],
@@ -34,7 +34,7 @@ def create_ark(creator, title, created, test):
             "datacite.publisher": "BD2K Minid"}#, "datacite.resourcetype" : "dataset"}
    
     response = client.mint_identifier(data)
-    print "minted %s" % app.config["HOSTNAME"] 
+    print("minted %s" % app.config["HOSTNAME"])
     data ["_target"] = "%s/%s" % (app.config["LANDING_PAGE"], response["identifier"])
     client.update_identifier(response["identifier"], data)
     return response["identifier"]
@@ -42,7 +42,7 @@ def create_ark(creator, title, created, test):
 def find_user(email, code):
     user = Miniduser.query.filter_by(email=email, code=code).first()
     if not user:
-        print "User %s with code %s doesn't exist." % (email, code)
+        print("User %s with code %s doesn't exist." % (email, code))
         abort(400)
     return user
 
@@ -56,7 +56,7 @@ def request_wants_json():
 @app.route('/minid/landingpage/<path:path>', methods=['GET'])
 def get_landingpage(path):
     test = request.args.get("test") in ["True", "true", "t", "T"]
-    print "Getting landing page %s (%s)" % (path, test)
+    print("Getting landing page %s (%s)" % (path, test))
     
     entity = Entity.query.filter_by(identifier=path).first()
 
@@ -73,10 +73,10 @@ def get_landingpage(path):
 @app.route('/minid/<path:path>', methods=['GET'])
 def get_entity(path):
     if not request_wants_json():
-        print "Only JSON repsonses are supported"
+        print("Only JSON repsonses are supported")
 
     test = request.args.get("test") in ["True", "true", "t", "T"]
-    print "Getting minid %s (%s)" % (path, test)
+    print("Getting minid %s (%s)" % (path, test))
     entities = None
     e_entities = None
     response_dict = {}
@@ -109,7 +109,7 @@ def update_entity(path):
     if not request_wants_json():
         return "Only JSON repsonses are supported", 400
 
-    print "Updating minid %s" % path
+    print("Updating minid %s" % path)
     if not request.json:
         return "No JSON update provided", 400
 
@@ -209,11 +209,11 @@ def create_entity():
         return render_template("index.html")
     
     if not request.json:
-        print "Request is not formatted as JSON %s" % request.json
+        print("Request is not formatted as JSON %s" % request.json)
         abort(400)
 
     if not 'checksum' in request.json:
-        print "Missing checksum"
+        print("Missing checksum")
         abort(400)
 
     entity, title, location, content_key = None, None, None, None
@@ -240,10 +240,10 @@ def create_entity():
         
     #entity = Entity.query.filter_by(checksum=checksum).first()
     #if entity:
-    #    print "Entity (%s) exists" % entity.identifier
+    #    print("Entity (%s) exists" % entity.identifier)
     #else:
     identifier = create_ark(user.name, title, created, test)
-    print "Created new identifier %s" % str(identifier)
+    print("Created new identifier %s" % str(identifier))
     entity = Entity(user, str(identifier), checksum, created, status, content_key)
     db.session.add(entity)
 
@@ -274,11 +274,11 @@ def create_entity():
 @app.route('/minid/user', methods=['POST','PUT'])
 def register_user():
     if not request.json:
-        print "Request is not JSON"
+        print("Request is not JSON")
         abort(400)
 
     if not 'name' in request.json or not 'email' in request.json:
-        print "Malformed request missing name or email %s" % request.json
+        print("Malformed request missing name or email %s" % request.json)
         abort(400)
                                             
     email = request.json["email"]
@@ -292,7 +292,7 @@ def register_user():
         user = Miniduser(name, orcid, email, code)
         db.session.add(user)
     else: 
-        print "Updating existing user."
+        print("Updating existing user.")
         user.name = name
         user.orcid = orcid
         user.code = code

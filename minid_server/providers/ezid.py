@@ -29,9 +29,9 @@ class EZIDClient():
         return anvl
 
     def mint_identifier(self, data):
-        print data
+        print(data)
         data = self.make_anvl(data)
-        print data
+        print(data)
         method = lambda : "POST"
         response = self.make_request("shoulder/%s%s" % (self.scheme, self.shoulder), method, data)
         return self.parse_response(response)
@@ -40,7 +40,7 @@ class EZIDClient():
         data = self.make_anvl(data)
         method = lambda : "POST"
         response = self.make_request("id/"+identifier, method, data)
-        print response
+        print(response)
 
     def make_request(self, path, method, data):
         request = urllib2.Request(join(self.server, path))
@@ -50,7 +50,7 @@ class EZIDClient():
         try:
             response = self.opener.open(request).read()
         except urllib2.HTTPError as e:
-            print e
+            print(e)
             response = e.read()
         return response
 

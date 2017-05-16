@@ -2,7 +2,7 @@
 
 from argparse import ArgumentParser
 import os
-import minid_client_api as minid_client
+import minid_client.minid_client_api as mca
 
 # Usage 
 # minid.py <file_path> --- will give you info on file if it has been registered
@@ -25,7 +25,7 @@ def parse_cli():
     parser.add_argument('--status', help="Status of the minid (ACTIVE or TOMBSTONE)")
     parser.add_argument('--obsoleted_by', help="A minid that replaces this minid")
     parser.add_argument("--content_key", help="A key that can be uesd to compare equivalent content")
-    parser.add_argument('--config', default=minid_client.DEFAULT_CONFIG_FILE)
+    parser.add_argument('--config', default=mca.DEFAULT_CONFIG_FILE)
     parser.add_argument('--register_user', action="store_true", help="Register a new user")
     parser.add_argument('--email', help="User email address")
     parser.add_argument('--name', help="User name")
@@ -40,9 +40,9 @@ def parse_cli():
 def main():
     args = parse_cli()
     if not args.quiet:
-        minid_client.configure_logging()
+        mca.configure_logging()
 
-    config = minid_client.parse_config(args.config)
+    config = mca.parse_config(args.config)
 
     server = config["minid_server"]
     if args.server:
@@ -52,7 +52,7 @@ def main():
 
     # register a new user
     if args.register_user:
-        minid_client.register_user(server, args.email, args.name, args.orcid)
+        mca.register_user(server, args.email, args.name, args.orcid)
         return
 
     # if we got this far we *must* have a filename (or identifier) arg
@@ -63,10 +63,10 @@ def main():
     # see if this file or name exists
     file_exists = os.path.isfile(args.filename)
     if file_exists:
-        checksum = minid_client.compute_checksum(args.filename)
-        entities = minid_client.get_entities(server, checksum, args.test)
+        checksum = mca.compute_checksum(args.filename)
+        entities = mca.get_entities(server, checksum, args.test)
     else:
-        entities = minid_client.get_entities(server, args.filename, False)
+        entities = mca.get_entities(server, args.filename, False)
         if entities is None:
             print("No entity registered with identifier: %s" % args.filename)
             return
@@ -81,10 +81,11 @@ def main():
             if locations is None or len(locations) ==0:
                 if "local_server" in config:
                     locations = ["%s%s" % (config["local_server"], os.path.abspath(args.filename))]
-            minid_client.register_entity(server, checksum,
-                                         args.email if args.email else config["email"],
-                                         args.code if args.code else config["code"],
-                                         locations, args.title, args.test, args.content_key)
+            mca.register_entity(server,
+                                checksum,
+                                args.email if args.email else config["email"],
+                                args.code if args.code else config["code"],
+                                locations, args.title, args.test, args.content_key)
     elif args.update:
         if entities is None:
             print("No entity found to update. You must use a valid minid.")
@@ -105,13 +106,15 @@ def main():
                     locs.append({'uri': l})
                 entity['locations'] = locs
 
-            updated_entity = minid_client.update_entity(server, args.filename, entity,
-                                       args.email if args.email else config["email"],
-                                       args.code if args.code else config["code"])
-            print (updated_entity)
+            updated_entity = mca.update_entity(server,
+                                               args.filename,
+                                               entity,
+                                               args.email if args.email else config["email"],
+                                               args.code if args.code else config["code"])
+            print(updated_entity)
     else:
         if entities:
-            minid_client.print_entities(entities, args.json)
+            mca.print_entities(entities, args.json)
         else:
             print("File is not named. Use --register to create a name for this file.")
 

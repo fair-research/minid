@@ -8,4 +8,4 @@ app.config.from_object('config.BaseConfig')
 db = SQLAlchemy(app)
 minid_email = SESEmail(app)
 
-print "Running"
+print("Running")

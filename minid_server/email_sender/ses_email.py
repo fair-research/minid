@@ -9,7 +9,7 @@ class SESEmail:
             aws_secret_access_key=app.config['AWS_SECRET_ACCESS_KEY'])
 
     def send_email(self, address, code):
-        print "Sending %s to %s" % (code, address)
+        print("Sending %s to %s" % (code, address))
         self. conn.send_email(
             'info@minid.bd2k.org',
             'Minid registration code',
