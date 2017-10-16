@@ -67,7 +67,7 @@ class Entity(db.Model):
 
 class Location(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    uri = db.Column(db.String(255))
+    uri = db.Column(db.String(5000))
     created = db.Column(db.DateTime())
 
     miniduser_id = db.Column(db.Integer, db.ForeignKey('miniduser.id'))
