@@ -53,7 +53,7 @@ def request_wants_json():
         request.accept_mimetypes[best] > \
         request.accept_mimetypes['text/html']
 
-@app.route('/minid/landingpage/<path:path>', methods=['GET'])
+@app.route('/landingpage/<path:path>', methods=['GET'])
 def get_landingpage(path):
     test = request.args.get("test") in ["True", "true", "t", "T"]
     print("Getting landing page %s (%s)" % (path, test))
@@ -70,7 +70,7 @@ def get_landingpage(path):
 #
 # Get entity by checksum or identifer.
 #
-@app.route('/minid/<path:path>', methods=['GET'])
+@app.route('/<path:path>', methods=['GET'])
 def get_entity(path):
     if not request_wants_json():
         print("Only JSON repsonses are supported")
@@ -104,7 +104,7 @@ def get_entity(path):
     return jsonify(response_dict)
 
 # Becuase Identifiers have /s we have to update the entire entity in one
-@app.route('/minid/<path:path>', methods=['PUT'])
+@app.route('/<path:path>', methods=['PUT'])
 def update_entity(path):
     if not request_wants_json():
         return "Only JSON repsonses are supported", 400
@@ -203,7 +203,7 @@ def update_entity(path):
 # }
 
 
-@app.route('/minid', methods=['GET', 'POST'])
+@app.route('/', methods=['GET', 'POST'])
 def create_entity():
     if request.method == 'GET':
         return render_template("index.html")
@@ -271,7 +271,7 @@ def create_entity():
 #  email: xxx
 #  orcid: xx
 # }
-@app.route('/minid/user', methods=['POST','PUT'])
+@app.route('/user', methods=['GET','POST','PUT'])
 def register_user():
     if not request.json:
         print("Request is not JSON")
