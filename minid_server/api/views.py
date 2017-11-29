@@ -4,6 +4,7 @@ import uuid
 import datetime
 from providers import EZIDClient
 from app import app, db, minid_email
+from api.utils import AuthorizationException, validate_globus_user
 
 # When using the test capabilities we append TEST to the checksum to avoid 
 # colusion with the real namespace
@@ -39,12 +40,31 @@ def create_ark(creator, title, created, test):
     client.update_identifier(response["identifier"], data)
     return response["identifier"]
 
+
 def find_user(email, code):
+
     user = Miniduser.query.filter_by(email=email, code=code).first()
-    if not user:
-        print("User %s with code %s doesn't exist." % (email, code))
-        abort(400)
-    return user
+    if user:
+        return user
+    else:
+        print('User %s with code %s does not exist.' % (email, code))
+
+    globus_auth_header = request.headers.get('Authorization')
+    if app.config['GLOBUS_AUTH_ENABLED'] and globus_auth_header:
+
+        validate_globus_user(email, globus_auth_header)
+        user = Miniduser.query.filter_by(email=email).first()
+        if user:
+            return user
+        else:
+            print('User %s is a valid globus user without a Minid account'
+                  % email)
+            msg = 'Globus user verified, but does not have a Minid account. ' \
+                  'Please register and try again.'
+            raise AuthorizationException(msg, user=email, code=403)
+
+    raise AuthorizationException('Failed to authorize user', user=email)
+
 
 def request_wants_json():
     best = request.accept_mimetypes \
@@ -285,7 +305,16 @@ def register_user():
     name = request.json["name"]
     orcid = request.json.get("orcid")
 
-    code = str(uuid.uuid4())
+    globus_auth_header = request.headers.get('Authorization')
+    if globus_auth_header and not app.config['GLOBUS_AUTH_ENABLED']:
+        print('User tried to register with Globus, but it is not enabled.')
+        abort(400)
+    elif globus_auth_header:
+        validate_globus_user(email, globus_auth_header)
+        # No need to set a code if the user is using Globus
+        code = ''
+    else:
+        code = str(uuid.uuid4())
 
     user = Miniduser.query.filter_by(email=email).first()
     if user is None: 
@@ -298,7 +327,15 @@ def register_user():
         user.code = code
 
     db.session.commit()
-    
-    minid_email.send_email(email, code)
+
+    if not globus_auth_header:
+        minid_email.send_email(email, code)
 
     return jsonify(user.get_json()), 201
+
+
+@app.errorhandler(AuthorizationException)
+def failed_authorization(error):
+    print('User %s failed to authorize: %s' % (error.user, error.message))
+    return 'Failed to authorize user %s: %s' % (error.user, error.message), \
+           error.code

@@ -12,6 +12,7 @@ class Config(object):
     HOSTNAME = "http://localhost:5000/minid"
     PORT = 5000
     LANDING_PAGE = "http://localhost:5000/minid/landingpage"
+    GLOBUS_AUTH_ENABLED = False
 
     EZID_SERVER = "https://ezid.cdlib.org"
     EZID_SCHEME = "ark:/"
