@@ -10,6 +10,7 @@ class Config(object):
     SQLALCHEMY_TRACK_MODIFICATIONS = True
 
     HOSTNAME = "http://localhost:5000/minid"
+    PORT = 5000
     LANDING_PAGE = "http://localhost:5000/minid/landingpage"
 
     EZID_SERVER = "https://ezid.cdlib.org"

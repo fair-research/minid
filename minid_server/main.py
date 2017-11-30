@@ -8,4 +8,4 @@ def create_db():
 
 if __name__ == '__main__':
     #create_db()
-    app.run()
+    app.run(port=app.config['PORT'])
