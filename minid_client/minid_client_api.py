@@ -76,8 +76,8 @@ def create_entity(server, entity, globus_auth_token=None):
     if r.status_code in [200, 201]:
         return r.json()
     elif r.status_code in [401, 403, 500]:
-        logger.error("Error creating entity (%s): %s" %
-                     (r.status_code, r.text))
+        raise MinidAPIException('Failed to create entity',
+                           code=r.status_code, **r.json())
     else:
         logger.error("Error creating entity (%s) -- check parameters or config file for invalid values" % r.status_code)
 
@@ -133,7 +133,8 @@ def register_user(server, email, name, orcid, globus_auth_token=None):
         user["orcid"] = orcid
     r = requests.post("%s/user" % server, json=user, headers=headers)
     if r.status_code in [401, 403, 500]:
-        logger.error(r.text)
+        raise MinidAPIException('Failed to register user',
+                           code=r.status_code, **r.json())
     else:
         return r.json()
 
@@ -166,6 +167,21 @@ def update_entity(server, name, entity, email, code, globus_auth_token=None):
 
     if r.status_code in [200, 201]:
         return r.json()
+    if r.status_code in [401, 403, 500]:
+        raise MinidAPIException('Failed to update entity',
+                           code=r.status_code, **r.json())
     else:
         logger.error("Error updating entity (%s, %s) -- check parameters or config file for invalid values" % (r.status_code, r.text))
 
+
+class MinidAPIException(Exception):
+    def __init__(self, error, message='', code='NA',
+                 type='Uncategorized', user=None):
+        logger.error("%s (%s - %s): %s" %
+                     (error, code, type, message))
+        super(MinidAPIException, self).__init__(message)
+        self.error = error
+        self.message = message
+        self.user = user
+        self.code = code
+        self.type = type

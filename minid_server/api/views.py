@@ -61,7 +61,8 @@ def find_user(email, code):
                   % email)
             msg = 'Globus user verified, but does not have a Minid account. ' \
                   'Please register and try again.'
-            raise AuthorizationException(msg, user=email, code=403)
+            raise AuthorizationException(msg, user=email, code=403,
+                                         type='UserNotRegistered')
 
     raise AuthorizationException('Failed to authorize user', user=email)
 
@@ -337,5 +338,5 @@ def register_user():
 @app.errorhandler(AuthorizationException)
 def failed_authorization(error):
     print('User %s failed to authorize: %s' % (error.user, error.message))
-    return 'Failed to authorize user %s: %s' % (error.user, error.message), \
-           error.code
+    return jsonify({'message': error.message, 'type': error.type,
+                    'user': error.user}), error.code

@@ -40,7 +40,7 @@ def parse_cli():
     return parser.parse_args()
 
 
-def main():
+def _main():
     args = parse_cli()
     if not args.quiet:
         mca.configure_logging()
@@ -123,6 +123,13 @@ def main():
             mca.print_entities(entities, args.json)
         else:
             print("File is not named. Use --register to create a name for this file.")
+
+def main():
+    try:
+        _main()
+    except mca.MinidAPIException:
+        pass
+
 
 if __name__ == '__main__':
     main()
