@@ -5,12 +5,13 @@ def validate_globus_user(email, authorization_header):
         type, code = authorization_header.split()
         if str(type) != 'Bearer':
             raise AuthorizationException('Only Bearer tokens are supported '
-                                          'for Globus Auth',
-                                          user=email, type='InvalidToken')
+                                         'for Globus Auth',
+                                         user=email, type='InvalidToken')
 
-        import globus_sdk # noqa
-        ac = globus_sdk.AuthClient(authorizer=
-                                   globus_sdk.AccessTokenAuthorizer(code))
+        import globus_sdk  # noqa
+        ac = globus_sdk.AuthClient(
+            authorizer=globus_sdk.AccessTokenAuthorizer(code))
+
         try:
             idents = ac.get_identities(email).get('identities')
             if not idents:
@@ -30,10 +31,9 @@ def validate_globus_user(email, authorization_header):
     except ImportError:
         print('Please install Globus: "pip install globus_sdk"')
         raise AuthorizationException('Server is misconfigured to use '
-                                      'Globus Auth, please notify'
-                                      'the administrator. Sorry.', user=email,
-                                      code=500, type='ServerError')
-
+                                     'Globus Auth, please notify '
+                                     'the administrator. Sorry.', user=email,
+                                     code=500, type='ServerError')
 
 
 class AuthorizationException(Exception):
