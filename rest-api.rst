@@ -12,9 +12,9 @@ User operations act on a user object. The user object is represented by the foll
 .. code-block:: json
 
   { 
-    'email' : '' , 
-    'name' : '', 
-    'orchid' : ''
+    "email" : "" , 
+    "name" : "", 
+    "orchid" : ""
   }
 
 **/user**
@@ -26,9 +26,9 @@ User operations act on a user object. The user object is represented by the foll
   .. code-block:: json
    
       { 
-        'email' : '' ,  [REQUIRED]
-        'name' : '',    [REQUIRED]
-        'orchid' : ''  [OPTIONAL]
+        "email" : "" ,  [REQUIRED]
+        "name" : "",    [REQUIRED]
+        "orchid" : ""   [OPTIONAL]
       }
     
     
@@ -42,10 +42,10 @@ User operations act on a user object. The user object is represented by the foll
   .. code-block:: json
    
     { 
-      'email' : '' ,  [REQUIRED]
-      'name' : '',    [REQUIRED]
-      'orchid' : ''  [OPTIONAL]
-      'code' : '' [REQUIRED]
+      "email" : "" ,  [REQUIRED]
+      "name" : "",    [REQUIRED]
+      "orchid" : ""   [OPTIONAL]
+      "code" : ""     [REQUIRED]
     }
 
   Output: A User object.
@@ -59,15 +59,15 @@ Minid operations act on a Minid object that is represented with the following JS
 .. code-block:: json
 
     { 
-      'identifier' : '',
-      'checksum' : '',
-      'titles' : [''],
-      'locations' : [''],
-      'status' : '',
-      'obsoleted_by' : [''],
-      'content_key' : '',
-      'creator' : '',
-      'created' : ''
+      "identifier" : "",
+      "checksum" : "",
+      "titles" : [""],
+      "locations" : [""],
+      "status" : "",
+      "obsoleted_by" : [""],
+      "content_key" : "",
+      "creator" : "",
+      "created" : ""
     }
     
 **/**
@@ -79,13 +79,12 @@ Minid operations act on a Minid object that is represented with the following JS
   .. code-block:: json
 
     { 
-      'checksum' : '' ,       [REQUIRED]
-      'content_key' : '' ,    [OPTIONAL]
-
-      'email' : '' ,          [REQUIRED]
-      'code' : '',            [REQUIRED]
-      'titles' : [''],        [REQUIRED]
-      'locations' : [''],     [OPTIONAL]
+      "checksum" : "" ,       [REQUIRED]
+      "content_key" : "" ,    [OPTIONAL]
+      "email" : "",           [REQUIRED]
+      "code" : "",            [REQUIRED]
+      "titles" : [""],        [REQUIRED]
+      "locations" : [""],     [OPTIONAL]
     }
   
   
@@ -107,21 +106,21 @@ Minid operations act on a Minid object that is represented with the following JS
   .. code-block:: json
 
     { 
-      'email' : '' ,          [REQUIRED]
-      'code' : '',            [REQUIRED]
-      'titles' : [''],        [REQUIRED]
-      'locations' : [''],     [OPTIONAL]
-      'status' : '',        [OPTIONAL - 'ACTIVE' or 'TOMBSTONED']
-      'obsoleted_by' : '',  [OPTIONAL - Valid minid]
+      "email" : "" ,          [REQUIRED]
+      "code" : "",            [REQUIRED]
+      "titles" : [""],        [REQUIRED]
+      "locations" : [""],     [OPTIONAL]
+      "status" : "",          [OPTIONAL - 'ACTIVE' or 'TOMBSTONED']
+      "obsoleted_by" : "",    [OPTIONAL - Valid minid]
     }
   
   
   Output: a Minid object.
 
    
- **/<checksum>**
+**/<checksum>**
  
- * [GET] Returns a Minid object for that checksum.
+* [GET] Returns a Minid object for that checksum.
  
   Input: None
   
