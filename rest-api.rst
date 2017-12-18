@@ -44,7 +44,7 @@ User operations act on a user object. The user object is represented by the foll
     { 
       "email" : "" ,  [REQUIRED]
       "name" : "",    [REQUIRED]
-      "orchid" : ""   [OPTIONAL]
+      "orchid" : "",  [OPTIONAL]
       "code" : ""     [REQUIRED]
     }
 
