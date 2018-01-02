@@ -31,13 +31,16 @@ def parse_cli():
     parser.add_argument('--name', help="User name")
     parser.add_argument('--orcid', help="user orcid")
     parser.add_argument('--code', help="user code")
+    parser.add_argument('--globus_auth_token',
+                        help='A valid user Globus Auth token instead of a code',
+                        default=None)
     parser.add_argument('--quiet', action="store_true", help="suppress logging output")
     parser.add_argument('filename', nargs="?", help="file or identifier to retrieve information about or register")
 
     return parser.parse_args()
 
 
-def main():
+def _main():
     args = parse_cli()
     if not args.quiet:
         mca.configure_logging()
@@ -52,7 +55,8 @@ def main():
 
     # register a new user
     if args.register_user:
-        mca.register_user(server, args.email, args.name, args.orcid)
+        mca.register_user(server, args.email, args.name, args.orcid,
+                          args.globus_auth_token)
         return
 
     # if we got this far we *must* have a filename (or identifier) arg
@@ -85,7 +89,8 @@ def main():
                                 checksum,
                                 args.email if args.email else config["email"],
                                 args.code if args.code else config["code"],
-                                locations, args.title, args.test, args.content_key)
+                                locations, args.title, args.test, args.content_key,
+                                args.globus_auth_token)
     elif args.update:
         if entities is None:
             print("No entity found to update. You must use a valid minid.")
@@ -93,7 +98,7 @@ def main():
         elif len(entities) > 1:
             print("More than one minid identified. Please use a minid identifier")
         else:
-            entity = entities.values()[0]
+            entity = list(entities.values())[0]
             if args.status:
                 entity['status'] = args.status
             if args.obsoleted_by:
@@ -110,13 +115,21 @@ def main():
                                                args.filename,
                                                entity,
                                                args.email if args.email else config["email"],
-                                               args.code if args.code else config["code"])
+                                               args.code if args.code else config["code"],
+                                               args.globus_auth_token)
             print(updated_entity)
     else:
         if entities:
             mca.print_entities(entities, args.json)
         else:
             print("File is not named. Use --register to create a name for this file.")
+
+def main():
+    try:
+        _main()
+    except mca.MinidAPIException:
+        pass
+
 
 if __name__ == '__main__':
     main()
