@@ -1,5 +1,3 @@
-from flask import Flask
-from flask.ext.sqlalchemy import SQLAlchemy
 import urllib
 from app import db
 

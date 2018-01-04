@@ -4,6 +4,7 @@ import uuid
 import datetime
 from providers import EZIDClient
 from app import app, db, minid_email
+from api.utils import AuthorizationException, validate_globus_user
 
 # When using the test capabilities we append TEST to the checksum to avoid 
 # colusion with the real namespace
@@ -39,12 +40,32 @@ def create_ark(creator, title, created, test):
     client.update_identifier(response["identifier"], data)
     return response["identifier"]
 
+
 def find_user(email, code):
+
     user = Miniduser.query.filter_by(email=email, code=code).first()
-    if not user:
-        print("User %s with code %s doesn't exist." % (email, code))
-        abort(400)
-    return user
+    if user:
+        return user
+    else:
+        print('User %s with code %s does not exist.' % (email, code))
+
+    globus_auth_header = request.headers.get('Authorization')
+    if app.config['GLOBUS_AUTH_ENABLED'] and globus_auth_header:
+
+        validate_globus_user(email, globus_auth_header)
+        user = Miniduser.query.filter_by(email=email).first()
+        if user:
+            return user
+        else:
+            print('User %s is a valid globus user without a Minid account'
+                  % email)
+            msg = 'Globus user verified, but does not have a Minid account. ' \
+                  'Please register and try again.'
+            raise AuthorizationException(msg, user=email, code=403,
+                                         type='UserNotRegistered')
+
+    raise AuthorizationException('Failed to authorize user', user=email)
+
 
 def request_wants_json():
     best = request.accept_mimetypes \
@@ -53,7 +74,7 @@ def request_wants_json():
         request.accept_mimetypes[best] > \
         request.accept_mimetypes['text/html']
 
-@app.route('/minid/landingpage/<path:path>', methods=['GET'])
+@app.route('/landingpage/<path:path>', methods=['GET'])
 def get_landingpage(path):
     test = request.args.get("test") in ["True", "true", "t", "T"]
     print("Getting landing page %s (%s)" % (path, test))
@@ -70,7 +91,7 @@ def get_landingpage(path):
 #
 # Get entity by checksum or identifer.
 #
-@app.route('/minid/<path:path>', methods=['GET'])
+@app.route('/<path:path>', methods=['GET'])
 def get_entity(path):
     if not request_wants_json():
         print("Only JSON repsonses are supported")
@@ -104,7 +125,7 @@ def get_entity(path):
     return jsonify(response_dict)
 
 # Becuase Identifiers have /s we have to update the entire entity in one
-@app.route('/minid/<path:path>', methods=['PUT'])
+@app.route('/<path:path>', methods=['PUT'])
 def update_entity(path):
     if not request_wants_json():
         return "Only JSON repsonses are supported", 400
@@ -203,7 +224,7 @@ def update_entity(path):
 # }
 
 
-@app.route('/minid', methods=['GET', 'POST'])
+@app.route('/', methods=['GET', 'POST'])
 def create_entity():
     if request.method == 'GET':
         return render_template("index.html")
@@ -271,7 +292,7 @@ def create_entity():
 #  email: xxx
 #  orcid: xx
 # }
-@app.route('/minid/user', methods=['POST','PUT'])
+@app.route('/user', methods=['GET','POST','PUT'])
 def register_user():
     if not request.json:
         print("Request is not JSON")
@@ -285,7 +306,16 @@ def register_user():
     name = request.json["name"]
     orcid = request.json.get("orcid")
 
-    code = str(uuid.uuid4())
+    globus_auth_header = request.headers.get('Authorization')
+    if globus_auth_header and not app.config['GLOBUS_AUTH_ENABLED']:
+        print('User tried to register with Globus, but it is not enabled.')
+        abort(400)
+    elif globus_auth_header:
+        validate_globus_user(email, globus_auth_header)
+        # No need to set a code if the user is using Globus
+        code = ''
+    else:
+        code = str(uuid.uuid4())
 
     user = Miniduser.query.filter_by(email=email).first()
     if user is None: 
@@ -298,7 +328,15 @@ def register_user():
         user.code = code
 
     db.session.commit()
-    
-    minid_email.send_email(email, code)
+
+    if not globus_auth_header:
+        minid_email.send_email(email, code)
 
     return jsonify(user.get_json()), 201
+
+
+@app.errorhandler(AuthorizationException)
+def failed_authorization(error):
+    print('User %s failed to authorize: %s' % (error.user, error.message))
+    return jsonify({'message': error.message, 'type': error.type,
+                    'user': error.user}), error.code

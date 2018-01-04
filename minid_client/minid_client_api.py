@@ -73,11 +73,17 @@ def get_entities(server, name, test):
     return r.json()
 
 
-def create_entity(server, entity):
-    r = requests.post(server, json=entity, headers={"Accept": "application/json"})
+def create_entity(server, entity, globus_auth_token=None):
+    headers = {"Accept": "application/json"}
+    if globus_auth_token is not None:
+        headers.update({"Authorization": "Bearer " + globus_auth_token})
+    r = requests.post(server, json=entity, headers=headers)
     if r.status_code in [200, 201]:
         return r.json()
-    else: 
+    elif r.status_code in [401, 403, 500]:
+        raise MinidAPIException('Failed to create entity',
+                           code=r.status_code, **r.json())
+    else:
         logger.error("Error creating entity (%s) -- check parameters or config file for invalid values" % r.status_code)
 
 
@@ -121,37 +127,66 @@ def print_entities(entities, as_json):
         print_entity(entity, as_json)
         print("\n")
 
-def register_user(server, email, name, orcid):
+def register_user(server, email, name, orcid, globus_auth_token=None):
     logger.info("Registering new user \"%s\" with email \"%s\"%s" %
                 (name, email, format(" and orcid \"%s\"" % orcid) if orcid else ""))
     user = {"name": name, "email": email}
+    headers = {"Content-Type": "application/json"}
+    if globus_auth_token is not None:
+        headers.update({"Authorization": "Bearer " + globus_auth_token})
     if orcid:
         user["orcid"] = orcid
-    r = requests.post("%s/user" % server, json=user, headers={"Content-Type": "application/json"})
-    return r.json()
+    r = requests.post("%s/user" % server, json=user, headers=headers)
+    if r.status_code in [401, 403, 500]:
+        raise MinidAPIException('Failed to register user',
+                           code=r.status_code, **r.json())
+    else:
+        return r.json()
 
 
-def register_entity(server, checksum, email, code, url=None, title='', test=False, content_key=None):
+def register_entity(server, checksum, email, code, url=None, title='',
+                    test=False, content_key=None, globus_auth_token=None):
     logger.info("Creating new identifier")
 
-    result = create_entity(server, entity_json(email, code, checksum, url, title, test, content_key))
+    result = create_entity(server,
+                           entity_json(email, code, checksum, url,
+                                               title, test, content_key),
+                           globus_auth_token)
 
     if result:
         logger.info("Created/updated minid: %s" % result["identifier"])
         return result["identifier"]
 
-def update_entity(server, name, entity, email, code):
+def update_entity(server, name, entity, email, code, globus_auth_token=None):
     if not entity:
         logger.info("No entity found to update")
         return None
 
     entity['email'] = email
     entity['code'] = code
+    headers = {"Accept": "application/json"}
+    if globus_auth_token is not None:
+        headers["Authorization"] = "Bearer " + globus_auth_token
 
-    r=requests.put("%s/%s" % (server, name), json=entity, headers={"Accept": "application/json"})
+    r=requests.put("%s/%s" % (server, name), json=entity, headers=headers)
 
     if r.status_code in [200, 201]:
         return r.json()
+    if r.status_code in [401, 403, 500]:
+        raise MinidAPIException('Failed to update entity',
+                           code=r.status_code, **r.json())
     else:
         logger.error("Error updating entity (%s, %s) -- check parameters or config file for invalid values" % (r.status_code, r.text))
 
+
+class MinidAPIException(Exception):
+    def __init__(self, error, message='', code='NA',
+                 type='Uncategorized', user=None):
+        logger.error("%s (%s - %s): %s" %
+                     (error, code, type, message))
+        super(MinidAPIException, self).__init__(message)
+        self.error = error
+        self.message = message
+        self.user = user
+        self.code = code
+        self.type = type
