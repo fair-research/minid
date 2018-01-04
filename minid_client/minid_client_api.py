@@ -45,8 +45,13 @@ def create_default_config():
     config_file.close()
 
 
-def compute_checksum(file_path, algorithm=hashlib.sha256(), block_size=65536):
+def compute_checksum(file_path, algorithm=None, block_size=65536):
     logger.info("Computing checksum for %s using %s" % (file_path, algorithm))
+    
+    if not algorithm:
+        print ("creating algorithm")
+        algorithm=hashlib.sha256()
+
     with open(os.path.abspath(file_path), 'rb') as open_file:
         buf = open_file.read(block_size)
         while len(buf) > 0:
