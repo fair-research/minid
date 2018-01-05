@@ -1,0 +1,12 @@
+include README.md
+include requirements.txt
+
+graft minid_client
+
+
+# Patterns to exclude from any directory
+global-exclude *~
+global-exclude *.pyc
+global-exclude .git
+global-exclude *.db
+global-exclude *.sqlite3
