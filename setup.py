@@ -20,6 +20,7 @@ setup(
     author_email='chard@uchicago.edu',
     packages=find_packages(),
     install_requires=install_requires,
+    license='Apache 2.0',
     entry_points={
         'console_scripts': [
             'minid = minid_client.minid:main'
