@@ -87,8 +87,11 @@ def create_entity(server, entity, globus_auth_token=None):
         logger.error("Error creating entity (%s) -- check parameters or config file for invalid values" % r.status_code)
 
 
-def entity_json(email, code, checksum, locations, title, test, content_key):
+def entity_json(email, code, checksum, checksum_function, locations, title,
+                test, content_key):
     entity = {"email":  email, "code": code, "checksum": checksum}
+    if checksum_function:
+        entity["checksum_function"] = checksum_function
     if test:
         entity["test"] = test
     if locations:
@@ -144,13 +147,14 @@ def register_user(server, email, name, orcid, globus_auth_token=None):
         return r.json()
 
 
-def register_entity(server, checksum, email, code, url=None, title='',
-                    test=False, content_key=None, globus_auth_token=None):
+def register_entity(server, checksum, email, code,
+            url=None, title='', test=False, content_key=None,
+            globus_auth_token=None, checksum_function=None):
     logger.info("Creating new identifier")
 
     result = create_entity(server,
-                           entity_json(email, code, checksum, url,
-                                               title, test, content_key),
+                           entity_json(email, code, checksum, checksum_function,
+						url, title, test, content_key),
                            globus_auth_token)
 
     if result:

@@ -68,6 +68,7 @@ def _main():
     file_exists = os.path.isfile(args.filename)
     if file_exists:
         checksum = mca.compute_checksum(args.filename)
+	checksum_function = "SHA256"
         entities = mca.get_entities(server, checksum, args.test)
     else:
         entities = mca.get_entities(server, args.filename, False)
@@ -90,7 +91,7 @@ def _main():
                                 args.email if args.email else config["email"],
                                 args.code if args.code else config["code"],
                                 locations, args.title, args.test, args.content_key,
-                                args.globus_auth_token)
+                                args.globus_auth_token, checksum_function)
     elif args.update:
         if entities is None:
             print("No entity found to update. You must use a valid minid.")
