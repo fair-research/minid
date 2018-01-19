@@ -14,7 +14,7 @@ Configuration
 
 Before using the API you first need to validate your email address. Enter the following command::
 
-  $ minid.py --register_user --email <email> --name <name> [--orcid <orcid>]`
+  $ minid.py --register_user --email <email> --name <name> [--orcid <orcid>]
 
 A unique code will be sent to your email address. You must present this code along with your 
 email address when accessing the API. As a convenience you can specify this information in 
