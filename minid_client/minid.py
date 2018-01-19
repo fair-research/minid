@@ -68,7 +68,7 @@ def _main():
     file_exists = os.path.isfile(args.filename)
     if file_exists:
         checksum = mca.compute_checksum(args.filename)
-	checksum_function = "SHA256"
+        checksum_function = "SHA256"
         entities = mca.get_entities(server, checksum, args.test)
     else:
         entities = mca.get_entities(server, args.filename, False)
