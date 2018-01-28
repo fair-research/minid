@@ -7,7 +7,16 @@ The minid server code is avaialble at `https://github.com/ini-bdds/minid-server 
 
 Installation
 ------------
-The CLI can be installed using Python setuptools. 
+
+The minid client and CLI is avaialble on PyPI. You can install it with the following command: 
+  
+  $ pip install minid
+  
+ALternatively, you can download the source code and install using setup tools.
+
+  $ git clone git@github.com/ini-bdds/minid
+  
+  $ python setup.py install
 
 Configuration
 -------------
