@@ -43,11 +43,11 @@ a minid configuration file (`~/.minid/minid-config.cfg`)
 Usage
 ----
 
-The CLI supports the following simple operations (Note: the test flag will create names in a test namespace that will be removed periodically, remove the test flag for creating production minids.): 
+The CLI supports the following simple operations (Note: the `--test` flag creates names in a test namespace that is removed periodically; remove that flag to create production minids.): 
 
-* Create a new identifier::
+* Create a new identifier (the `--location` option, if provided, must be at the end)::
 
-    $ minid.py --test --register [--title <title>] <file_name>
+    $ minid.py --test --register [--title <title>] <file_name> [--locations <loc1>..<locN>]
     
 * Retrieve metadata about a file::
 
