@@ -67,6 +67,42 @@ The CLI supports the following simple operations (Note: the `--test` flag create
 
 Landing pages are accessible via the minid website: minid.bd2k.org/minid/landingpage/<identifier>. 
 
+
+file manifest format
+--------------------
+Minids can only be assigned to a single file. In order to assign a minid to a collection of files we recommend using a `BDBag <https://github.com/ini-bdds/bdbag>`_ or the minid file manifest format. 
+
+The minid file manifest format is a JSON-based format that enumerates a list of files as JSON objects that have the following attributes:
+
+* length: The length of the file in bytes.
+
+* filename: The filename (or path) relative to the manifest file.
+
+* One or more (only one of each) of the following `algorithm:checksum` key-value pairs:
+  
+  * md5:<md5 hex value>
+  
+  * sha256:<sha256 hex value>
+  
+  * sha512:<sha512 hex value>
+
+Below is a sample file manifest configuration file::
+
+  [
+      {
+          "length":321,
+          "filename":"file1.json",
+          "md5":"9faccdb6f9a47a10d9a00bd2b13f7ab3",
+          "sha256":"eb42cbc9682e953a03fe83c5297093d95eec045e814517a4e891437b9b993139"
+      },
+      {
+          "length": 632860,
+          "filename": "minid_v0.1_Nov_2015.pdf",
+          "sha256": "cacc1abf711425d3c554277a5989df269cefaa906d27f1aaa72205d30224ed5f"
+      }
+  ]
+
+
 More information
 ----------------
 
