@@ -23,7 +23,7 @@ Configuration
 
 Before using the API you first need to validate your email address. Enter the following command::
 
-  $ minid.py --register_user --email <email> --name <name> [--orcid <orcid>]
+  $ minid --register_user --email <email> --name <name> [--orcid <orcid>]
 
 A unique code will be sent to your email address. You must present this code along with your 
 email address when accessing the API. As a convenience you can specify this information in 
@@ -47,23 +47,23 @@ The CLI supports the following simple operations (Note: the `--test` flag create
 
 * Create a new identifier (the `--location` option, if provided, must be at the end)::
 
-    $ minid.py --test --register [--title <title>] <file_name> [--locations <loc1>..<locN>]
+    $ minid --test --register [--title <title>] <file_name> [--locations <loc1>..<locN>]
     
 * Retrieve metadata about a file::
 
-    $ minid.py --test <file_name>
+    $ minid --test <file_name>
     
 * Retrieve metadata about an identifier::
 
-    $ minid.py --test <identifier>
+    $ minid --test <identifier>
 
 * Update metadata about an identifier:: 
 
-    $ minid.py --test --update [--title <title>] [--status <status>] [--obsoleted_by <minid>] [--locations <loc1> <loc2>] <identifier>
+    $ minid --test --update [--title <title>] [--status <status>] [--obsoleted_by <minid>] [--locations <loc1> <loc2>] <identifier>
     
 *  View all minid options:: 
 
-    $ minid.py -h
+    $ minid -h
 
 Landing pages are accessible via the minid website: minid.bd2k.org/minid/landingpage/<identifier>. 
 
