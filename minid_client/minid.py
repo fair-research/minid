@@ -2,8 +2,9 @@
 
 from argparse import ArgumentParser
 import os
+import json
 import minid_client.minid_client_api as mca
-
+from minid_client import __VERSION__
 # Usage 
 # minid.py <file_path> --- will give you info on file if it has been registered
 # minid.py <identifer> -- will give you info on identifier
@@ -16,8 +17,9 @@ def parse_cli():
     description = 'BD2K minid tool for assigning an identifier to data'
     parser = ArgumentParser(description=description)
     parser.add_argument('--register', action="store_true", help="Register the file")
+    parser.add_argument('--batch-register', action="store_true", help="Register multiple files listed in a JSON manifest")
     parser.add_argument('--update', action="store_true", help="Update a minid")
-    parser.add_argument('--test', action="store_true", help="Run a test of this registration using the test minid namespace")
+    parser.add_argument('--test', action="store_true", default=False, help="Run a test of this registration using the test minid namespace")
     parser.add_argument('--json', action="store_true", help="Return output as JSON")
     parser.add_argument('--server', help="Minid server")
     parser.add_argument('--title', help="Title of named file")
@@ -35,6 +37,7 @@ def parse_cli():
                         help='A valid user Globus Auth token instead of a code',
                         default=None)
     parser.add_argument('--quiet', action="store_true", help="suppress logging output")
+    parser.add_argument('--version', action='version', version=__VERSION__)
     parser.add_argument('filename', nargs="?", help="file or identifier to retrieve information about or register")
 
     return parser.parse_args()
@@ -64,6 +67,17 @@ def _main():
         print("Either a file name or an identifier must be specified.")
         return
 
+    if args.batch_register:
+        results = mca.register_entities(server,
+                                        args.email if args.email else config["email"],
+                                        args.code if args.code else config["code"],
+                                        args.filename,
+                                        args.test,
+                                        args.content_key,
+                                        args.globus_auth_token)
+        print(json.dumps(results, indent=2))
+        return
+
     # see if this file or name exists
     file_exists = os.path.isfile(args.filename)
     if file_exists:
@@ -71,8 +85,8 @@ def _main():
         checksum_function = "SHA256"
         entities = mca.get_entities(server, checksum, args.test)
     else:
-        entities = mca.get_entities(server, args.filename, False)
-        if entities is None:
+        entities = mca.get_entities(server, args.filename, args.test)
+        if not entities:
             print("No entity registered with identifier: %s" % args.filename)
             return
    
@@ -83,7 +97,7 @@ def _main():
             return
         else:
             locations = args.locations
-            if locations is None or len(locations) ==0:
+            if locations is None or len(locations) == 0:
                 if "local_server" in config:
                     locations = ["%s%s" % (config["local_server"], os.path.abspath(args.filename))]
             mca.register_entity(server,
@@ -93,7 +107,7 @@ def _main():
                                 locations, args.title, args.test, args.content_key,
                                 args.globus_auth_token, checksum_function)
     elif args.update:
-        if entities is None:
+        if not entities:
             print("No entity found to update. You must use a valid minid.")
             return
         elif len(entities) > 1:
@@ -105,7 +119,7 @@ def _main():
             if args.obsoleted_by:
                 entity['obsoleted_by'] = args.obsoleted_by
             if args.title:
-                entity['titles'] = [{"title" : args.title}]
+                entity['titles'] = [{"title": args.title}]
             if args.locations:
                 locs = []
                 for l in args.locations:
@@ -124,6 +138,7 @@ def _main():
             mca.print_entities(entities, args.json)
         else:
             print("File is not named. Use --register to create a name for this file.")
+
 
 def main():
     try:
