@@ -1,13 +1,13 @@
-include README.md
+include *.rst
 include requirements.txt
 include LICENSE
 
 graft minid_client
 
+# Currently this is only for reference on Github
+prune config
 
 # Patterns to exclude from any directory
 global-exclude *~
 global-exclude *.pyc
 global-exclude .git
-global-exclude *.db
-global-exclude *.sqlite3

@@ -1,6 +1,13 @@
 from setuptools import setup, find_packages
+from os import path
 
 import minid_client
+
+here = path.abspath(path.dirname(__file__))
+
+# Get the long description from the README file
+with open(path.join(here, 'README.rst')) as f:
+    long_description = f.read()
 
 install_requires = []
 with open('requirements.txt') as reqs:
@@ -15,6 +22,7 @@ setup(
     name='minid',
     version=minid_client.__VERSION__,
     description='BD2K Minimum Viable Identifier',
+    long_description=long_description,
     url='http://minid.bd2k.org/',
     author='Kyle Chard',
     author_email='chard@uchicago.edu',
