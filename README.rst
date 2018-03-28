@@ -12,7 +12,7 @@ The minid client and CLI is avaialble on PyPI. You can install it with the follo
   
   $ pip install minid
   
-ALternatively, you can download the source code and install using setup tools::
+Alternatively, you can download the source code and install using setup tools::
 
   $ git clone git@github.com:ini-bdds/minid.git
   
@@ -30,7 +30,7 @@ email address when accessing the API. As a convenience you can specify this info
 a minid configuration file (`~/.minid/minid-config.cfg`)
 
 
-.. code-block:: none
+.. code-block:: ini
 
     [general]
     minid_server: http://minid.bd2k.org/minid
@@ -41,7 +41,7 @@ a minid configuration file (`~/.minid/minid-config.cfg`)
 
 
 Usage
-----
+-----
 
 The CLI supports the following simple operations (Note: the `--test` flag creates names in a test namespace that is removed periodically; remove that flag to create production minids.): 
 
