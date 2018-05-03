@@ -112,8 +112,8 @@ Below is a sample file manifest configuration file::
 More information
 ----------------
 
-`I'll take that to go: Big data bags and minimal identifiers for exchange of large, complex datasets <https://zenodo.org/record/820878>`_ explains the motivation for Minids and the related BDBag construct, provides details on design and implementation, and gives examples of use.
+"`I'll take that to go: Big data bags and minimal identifiers for exchange of large, complex datasets <https://zenodo.org/record/820878>`_" explains the motivation for Minids and the related BDBag construct, provides details on design and implementation, and gives examples of use.
 
-`Reproducible big data science: A case study in continuous FAIRness <https://www.biorxiv.org/content/early/2018/02/27/268755>`_ presents a use case in which BDBags and Minids are used to capture a transcription factor binding site analysis.
+"`Reproducible big data science: A case study in continuous FAIRness <https://www.biorxiv.org/content/early/2018/02/27/268755>`_" presents a use case in which BDBags and Minids are used to capture a transcription factor binding site analysis.
 
 More information about the project can be found at: `http://minid.bd2k.org/ <http://minid.bd2k.org/>`_
