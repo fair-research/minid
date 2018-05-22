@@ -39,6 +39,11 @@ a minid configuration file (`~/.minid/minid-config.cfg`)
     orcid: <optional Orcid>
     code: <Code>
 
+Alternatively, you can login with Globus::
+
+  $ minid --register_user --email <email> --name <name> --globus_login
+
+
 
 Usage
 -----

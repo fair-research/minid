@@ -33,9 +33,7 @@ def parse_cli():
     parser.add_argument('--name', help="User name")
     parser.add_argument('--orcid', help="user orcid")
     parser.add_argument('--code', help="user code")
-    parser.add_argument('--globus_auth_token',
-                        help='A valid user Globus Auth token instead of a code',
-                        default=None)
+    parser.add_argument('--globus_login', help='Use Globus instead of a code', action="store_true")
     parser.add_argument('--quiet', action="store_true", help="suppress logging output")
     parser.add_argument('--version', action='version', version=__VERSION__)
     parser.add_argument('filename', nargs="?", help="file or identifier to retrieve information about or register")
@@ -56,10 +54,12 @@ def _main():
 
     entities = None
 
+    globus_token = mca.globus_auth(login=args.globus_login)
+
     # register a new user
     if args.register_user:
         mca.register_user(server, args.email, args.name, args.orcid,
-                          args.globus_auth_token)
+                          globus_token)
         return
 
     # if we got this far we *must* have a filename (or identifier) arg
@@ -74,7 +74,7 @@ def _main():
                                         args.filename,
                                         args.test,
                                         args.content_key,
-                                        args.globus_auth_token)
+                                        globus_token)
         print(json.dumps(results, indent=2))
         return
 
@@ -105,7 +105,7 @@ def _main():
                                 args.email if args.email else config["email"],
                                 args.code if args.code else config["code"],
                                 locations, args.title, args.test, args.content_key,
-                                args.globus_auth_token, checksum_function)
+                                globus_token, checksum_function)
     elif args.update:
         if not entities:
             print("No entity found to update. You must use a valid minid.")
@@ -131,7 +131,7 @@ def _main():
                                                entity,
                                                args.email if args.email else config["email"],
                                                args.code if args.code else config["code"],
-                                               args.globus_auth_token)
+                                               globus_token)
             print(updated_entity)
     else:
         if entities:
