@@ -155,8 +155,11 @@ def register_user(server, email, name, orcid, globus_auth_token=None):
 def register_entity(server, checksum, email, code,
                     url=None, title='', test=False, content_key=None,
                     globus_auth_token=None, checksum_function=None):
-    logger.info("Creating new identifier")
+    if not email:
+        raise MinidAPIException('No email specified for registration.',
+                                code=None)
 
+    logger.info("Creating new identifier")
     result = create_entity(server,
                            entity_json(email, code, checksum, checksum_function, url, title, test, content_key),
                            globus_auth_token)
