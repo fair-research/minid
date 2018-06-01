@@ -4,6 +4,7 @@ import requests
 import logging
 import hashlib
 import json
+import datetime
 from collections import OrderedDict
 
 if sys.version_info > (3,):
@@ -77,6 +78,20 @@ def get_entities(server, name, test):
     if r.status_code == 404:
         return None
     return r.json()
+
+
+def get_most_recent_active_entity(entities):
+    active = list()
+    for k, v in entities.items():
+        if not v['status'] == "ACTIVE":
+            continue
+        else:
+            if v.get('obsoleted_by') is None:
+                active.append(entities[k])
+    active_sorted = sorted(active,
+                           key=lambda x: datetime.datetime.strptime(x["created"], '%Y-%m-%dT%H:%M:%S.%f'),
+                           reverse=True)
+    return active_sorted[0]
 
 
 def create_entity(server, entity, globus_auth_token=None):
@@ -185,7 +200,7 @@ def register_entities(server, email, code, entity_manifest,
             if is_json_stream:
                 entity = json.loads(entity, object_pairs_hook=OrderedDict)
 
-            url = entity['url']
+            url = entity['url'] if isinstance(entity['url'], list) else [entity['url']]
             filename = entity['filename']
             metadata = entity.get("metadata", {})
             title = metadata.get("title", os.path.basename(filename))
@@ -200,10 +215,13 @@ def register_entities(server, email, code, entity_manifest,
             entities = get_entities(server, checksum, test)
             if entities:
                 logging.warning("Entity already registered with checksum: %s" % checksum)
-                continue
-            result = register_entity(server, checksum, email, code,
-                                     [url], title, test, content_key, globus_auth_token, checksum_function)
-            entity['url'] = result
+                current_entity = get_most_recent_active_entity(entities)
+                entity['url'] = current_entity["identifier"]
+            else:
+                result = register_entity(server, checksum, email, code,
+                                         url, title, test, content_key,
+                                         globus_auth_token, checksum_function)
+                entity['url'] = result
             results.append(entity)
 
         return results
