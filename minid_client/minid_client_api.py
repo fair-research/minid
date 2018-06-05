@@ -146,7 +146,7 @@ def register_user(server, email, name, orcid, globus_auth_token=None):
     if orcid:
         user["orcid"] = orcid
     r = requests.post("%s/user" % server, json=user, headers=headers)
-    if r.status_code in [401, 403, 500]:
+    if r.status_code in [400, 401, 403, 500]:
         raise MinidAPIException('Failed to register user', code=r.status_code, **r.json())
     else:
         return r.json()
