@@ -48,12 +48,11 @@ def create_default_config():
 
 
 def compute_checksum(file_path, algorithm=None, block_size=65536):
-    logger.info("Computing checksum for %s using %s" % (file_path, algorithm))
-    
     if not algorithm:
-        print("creating algorithm")
+        logger.debug("creating algorithm")
         algorithm = hashlib.sha256()
 
+    logger.info("Computing checksum for %s using %s" % (file_path, algorithm))
     with open(os.path.abspath(file_path), 'rb') as open_file:
         buf = open_file.read(block_size)
         while len(buf) > 0:
@@ -71,8 +70,7 @@ def get_entities(server, name, test):
         query = "?test=true"
 
     # TODO: this can likely be undone once the server supports "minid:xyz" resolution
-    if name.startswith("minid:"):
-        name = name.replace("minid:", "ark:/57799/")
+    name = minid2ark(name)
 
     r = requests.get("%s/%s%s" % (server, name, query), headers={"Accept": "application/json"})
     if r.status_code == 404:
@@ -126,7 +124,7 @@ def print_entity(entity, as_json):
     if as_json:
         print(json.dumps(entity))
     else:
-        print("Identifier: %s" % entity["identifier"])
+        print("Identifier: %s" % ark2minid(entity["identifier"]))
         print("Created by: %s (%s)" % (entity["creator"], entity["orcid"]))
         print("Created: %s" % entity["created"])
         print("Checksum: %s" % entity["checksum"])
@@ -177,8 +175,10 @@ def register_entity(server, checksum, email, code,
                            globus_auth_token)
 
     if result:
-        logger.info("Created/updated minid: %s" % result["identifier"])
-        return result["identifier"]
+        # TODO: this can likely be undone once the server supports "minid:xyz" resolution
+        identifier = ark2minid(result["identifier"])
+        logger.info("Created/updated minid: %s" % identifier)
+        return identifier
 
 
 def register_entities(server, email, code, entity_manifest,
@@ -214,9 +214,10 @@ def register_entities(server, email, code, entity_manifest,
                 checksum_function = md5_func.upper()
             entities = get_entities(server, checksum, test)
             if entities:
-                logging.warning("Entity already registered with checksum: %s" % checksum)
+                logging.warning("Entity already registered with checksum: %s. "
+                                "Will use the most recent active identifier for this entity." % checksum)
                 current_entity = get_most_recent_active_entity(entities)
-                entity['url'] = current_entity["identifier"]
+                entity['url'] = ark2minid(current_entity["identifier"])
             else:
                 result = register_entity(server, checksum, email, code,
                                          url, title, test, content_key,
@@ -247,6 +248,18 @@ def update_entity(server, name, entity, email, code, globus_auth_token=None):
     else:
         logger.error("Error updating entity (%s, %s) -- check parameters or config file for invalid values" % (
             r.status_code, r.text))
+
+
+def ark2minid(identifier):
+    if identifier.startswith("ark:/57799/"):
+        identifier = identifier.replace("ark:/57799/", "minid:")
+    return identifier
+
+
+def minid2ark(identifier):
+    if identifier.startswith("minid:"):
+        identifier = identifier.replace("minid:", "ark:/57799/")
+    return identifier
 
 
 class MinidAPIException(Exception):
