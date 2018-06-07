@@ -12,6 +12,9 @@ if sys.version_info > (3,):
 else:
     from ConfigParser import ConfigParser
 
+MINID_PREFIX = "minid:"
+MINID_ARK_ID = "ark:/57799/"
+
 DEFAULT_CONFIG_PATH = os.path.join(os.path.expanduser('~'), '.minid')
 DEFAULT_CONFIG_FILE = os.path.join(DEFAULT_CONFIG_PATH, 'minid-config.cfg')
 
@@ -251,14 +254,14 @@ def update_entity(server, name, entity, email, code, globus_auth_token=None):
 
 
 def ark2minid(identifier):
-    if identifier.startswith("ark:/57799/"):
-        identifier = identifier.replace("ark:/57799/", "minid:")
+    if identifier.startswith(MINID_ARK_ID):
+        identifier = identifier.replace(MINID_ARK_ID, MINID_PREFIX)
     return identifier
 
 
 def minid2ark(identifier):
-    if identifier.startswith("minid:"):
-        identifier = identifier.replace("minid:", "ark:/57799/")
+    if identifier.startswith(MINID_PREFIX):
+        identifier = identifier.replace(MINID_PREFIX, MINID_ARK_ID)
     return identifier
 
 
