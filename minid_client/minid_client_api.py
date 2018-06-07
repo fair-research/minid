@@ -239,7 +239,7 @@ def update_entity(server, name, entity, email, code, globus_auth_token=None):
     if globus_auth_token is not None:
         headers["Authorization"] = "Bearer " + globus_auth_token
 
-    r = requests.put("%s/%s" % (server, name), json=entity, headers=headers)
+    r = requests.put("%s/%s" % (server, minid2ark(name)), json=entity, headers=headers)
 
     if r.status_code in [200, 201]:
         return r.json()
