@@ -4,12 +4,16 @@ import requests
 import logging
 import hashlib
 import json
+import datetime
 from collections import OrderedDict
 
 if sys.version_info > (3,):
     from configparser import ConfigParser
 else:
     from ConfigParser import ConfigParser
+
+MINID_PREFIX = "minid:"
+MINID_ARK_ID = "ark:/57799/"
 
 DEFAULT_CONFIG_PATH = os.path.join(os.path.expanduser('~'), '.minid')
 DEFAULT_CONFIG_FILE = os.path.join(DEFAULT_CONFIG_PATH, 'minid-config.cfg')
@@ -47,12 +51,11 @@ def create_default_config():
 
 
 def compute_checksum(file_path, algorithm=None, block_size=65536):
-    logger.info("Computing checksum for %s using %s" % (file_path, algorithm))
-    
     if not algorithm:
-        print("creating algorithm")
+        logger.debug("creating algorithm")
         algorithm = hashlib.sha256()
 
+    logger.info("Computing checksum for %s using %s" % (file_path, algorithm))
     with open(os.path.abspath(file_path), 'rb') as open_file:
         buf = open_file.read(block_size)
         while len(buf) > 0:
@@ -70,13 +73,26 @@ def get_entities(server, name, test):
         query = "?test=true"
 
     # TODO: this can likely be undone once the server supports "minid:xyz" resolution
-    if name.startswith("minid:"):
-        name = name.replace("minid:", "ark:/57799/")
+    name = minid2ark(name)
 
     r = requests.get("%s/%s%s" % (server, name, query), headers={"Accept": "application/json"})
     if r.status_code == 404:
         return None
     return r.json()
+
+
+def get_most_recent_active_entity(entities):
+    active = list()
+    for k, v in entities.items():
+        if not v['status'] == "ACTIVE":
+            continue
+        else:
+            if v.get('obsoleted_by') is None:
+                active.append(entities[k])
+    active_sorted = sorted(active,
+                           key=lambda x: datetime.datetime.strptime(x["created"], '%Y-%m-%dT%H:%M:%S.%f'),
+                           reverse=True)
+    return active_sorted[0]
 
 
 def create_entity(server, entity, globus_auth_token=None):
@@ -111,7 +127,7 @@ def print_entity(entity, as_json):
     if as_json:
         print(json.dumps(entity))
     else:
-        print("Identifier: %s" % entity["identifier"])
+        print("Identifier: %s" % ark2minid(entity["identifier"]))
         print("Created by: %s (%s)" % (entity["creator"], entity["orcid"]))
         print("Created: %s" % entity["created"])
         print("Checksum: %s" % entity["checksum"])
@@ -162,8 +178,10 @@ def register_entity(server, checksum, email, code,
                            globus_auth_token)
 
     if result:
-        logger.info("Created/updated minid: %s" % result["identifier"])
-        return result["identifier"]
+        # TODO: this can likely be undone once the server supports "minid:xyz" resolution
+        identifier = ark2minid(result["identifier"])
+        logger.info("Created/updated minid: %s" % identifier)
+        return identifier
 
 
 def register_entities(server, email, code, entity_manifest,
@@ -185,7 +203,7 @@ def register_entities(server, email, code, entity_manifest,
             if is_json_stream:
                 entity = json.loads(entity, object_pairs_hook=OrderedDict)
 
-            url = entity['url']
+            url = entity['url'] if isinstance(entity['url'], list) else [entity['url']]
             filename = entity['filename']
             metadata = entity.get("metadata", {})
             title = metadata.get("title", os.path.basename(filename))
@@ -199,11 +217,15 @@ def register_entities(server, email, code, entity_manifest,
                 checksum_function = md5_func.upper()
             entities = get_entities(server, checksum, test)
             if entities:
-                logging.warning("Entity already registered with checksum: %s" % checksum)
-                continue
-            result = register_entity(server, checksum, email, code,
-                                     [url], title, test, content_key, globus_auth_token, checksum_function)
-            entity['url'] = result
+                logging.warning("Entity already registered with checksum: %s. "
+                                "Will use the most recent active identifier for this entity." % checksum)
+                current_entity = get_most_recent_active_entity(entities)
+                entity['url'] = ark2minid(current_entity["identifier"])
+            else:
+                result = register_entity(server, checksum, email, code,
+                                         url, title, test, content_key,
+                                         globus_auth_token, checksum_function)
+                entity['url'] = result
             results.append(entity)
 
         return results
@@ -220,7 +242,7 @@ def update_entity(server, name, entity, email, code, globus_auth_token=None):
     if globus_auth_token is not None:
         headers["Authorization"] = "Bearer " + globus_auth_token
 
-    r = requests.put("%s/%s" % (server, name), json=entity, headers=headers)
+    r = requests.put("%s/%s" % (server, minid2ark(name)), json=entity, headers=headers)
 
     if r.status_code in [200, 201]:
         return r.json()
@@ -229,6 +251,18 @@ def update_entity(server, name, entity, email, code, globus_auth_token=None):
     else:
         logger.error("Error updating entity (%s, %s) -- check parameters or config file for invalid values" % (
             r.status_code, r.text))
+
+
+def ark2minid(identifier):
+    if identifier.startswith(MINID_ARK_ID):
+        identifier = identifier.replace(MINID_ARK_ID, MINID_PREFIX)
+    return identifier
+
+
+def minid2ark(identifier):
+    if identifier.startswith(MINID_PREFIX):
+        identifier = identifier.replace(MINID_PREFIX, MINID_ARK_ID)
+    return identifier
 
 
 class MinidAPIException(Exception):
