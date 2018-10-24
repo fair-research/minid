@@ -7,47 +7,10 @@ import json
 import datetime
 from collections import OrderedDict
 
-if sys.version_info > (3,):
-    from configparser import ConfigParser
-else:
-    from ConfigParser import ConfigParser
-
 MINID_PREFIX = "minid:"
 MINID_ARK_ID = "ark:/57799/"
 
-DEFAULT_CONFIG_PATH = os.path.join(os.path.expanduser('~'), '.minid')
-DEFAULT_CONFIG_FILE = os.path.join(DEFAULT_CONFIG_PATH, 'minid-config.cfg')
-
 logger = logging.getLogger(__name__)
-
-
-def configure_logging(level=logging.INFO, logpath=None):
-    log_format = "%(asctime)s - %(levelname)s - %(message)s"
-    if logpath:
-        logging.basicConfig(filename=logpath, level=level, format=log_format)
-    else:
-        logging.basicConfig(level=level, format=log_format)
-
-
-def parse_config(config_file):
-    if config_file == DEFAULT_CONFIG_FILE and not os.path.isfile(config_file):
-        logger.info("No default configuration file found, creating one")
-        create_default_config()
-    config = ConfigParser()
-    config.read(config_file)
-    return dict(config.items('general'))
-
-
-def create_default_config():
-    if not os.path.isdir(DEFAULT_CONFIG_PATH):
-        os.makedirs(DEFAULT_CONFIG_PATH)
-    with open(DEFAULT_CONFIG_FILE, 'w') as config_file:
-        config_file.writelines(['[general]\n',
-                                'minid_server: http://minid.bd2k.org/minid\n',
-                                'email: \n',
-                                'orcid: \n',
-                                'code: \n'])
-    config_file.close()
 
 
 def compute_checksum(file_path, algorithm=None, block_size=65536):
@@ -153,19 +116,7 @@ def print_entities(entities, as_json):
 
 
 def register_user(server, email, name, orcid, globus_auth_token=None):
-    logger.info("Registering new user \"%s\" with email \"%s\"%s" %
-                (name, email, format(" and orcid \"%s\"" % orcid) if orcid else ""))
-    user = {"name": name, "email": email}
-    headers = {"Content-Type": "application/json"}
-    if globus_auth_token is not None:
-        headers.update({"Authorization": "Bearer " + globus_auth_token})
-    if orcid:
-        user["orcid"] = orcid
-    r = requests.post("%s/user" % server, json=user, headers=headers)
-    if r.status_code in [400, 401, 403, 500]:
-        raise MinidAPIException('Failed to register user', code=r.status_code, **r.json())
-    else:
-        return r.json()
+    raise NotImplemented('Command removed. Please use "minid login" instead.')
 
 
 def register_entity(server, checksum, email, code,

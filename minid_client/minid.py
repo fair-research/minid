@@ -4,7 +4,9 @@ from argparse import ArgumentParser
 import os
 import json
 import minid_client.minid_client_api as mca
-from minid_client import __VERSION__
+from minid_client.config import DEFAULT_CONFIG_FILE, parse_config
+from minid_client import __VERSION__, configure_logging
+from minid_client.login import login
 # Usage 
 # minid.py <file_path> --- will give you info on file if it has been registered
 # minid.py <identifer> -- will give you info on identifier
@@ -17,6 +19,7 @@ def parse_cli():
     description = 'BD2K minid tool for assigning an identifier to data'
     parser = ArgumentParser(description=description)
     parser.add_argument('--register', action="store_true", help="Register the file")
+    parser.add_argument('--login', action="store_true", help="Login")
     parser.add_argument('--batch-register', action="store_true", help="Register multiple files listed in a JSON manifest")
     parser.add_argument('--update', action="store_true", help="Update a minid")
     parser.add_argument('--test', action="store_true", default=False, help="Run a test of this registration using the test minid namespace")
@@ -27,7 +30,7 @@ def parse_cli():
     parser.add_argument('--status', help="Status of the minid (ACTIVE or TOMBSTONE)")
     parser.add_argument('--obsoleted_by', help="A minid that replaces this minid")
     parser.add_argument("--content_key", help="A key that can be uesd to compare equivalent content")
-    parser.add_argument('--config', default=mca.DEFAULT_CONFIG_FILE)
+    parser.add_argument('--config', default=DEFAULT_CONFIG_FILE)
     parser.add_argument('--register_user', action="store_true", help="Register a new user")
     parser.add_argument('--email', help="User email address")
     parser.add_argument('--name', help="User name")
@@ -46,11 +49,11 @@ def parse_cli():
 def _main():
     args = parse_cli()
     if not args.quiet:
-        mca.configure_logging()
+        configure_logging()
 
-    config = mca.parse_config(args.config)
+    config = dict(parse_config().items())
 
-    server = config["minid_server"]
+    server = ["minid_server"]
     if args.server:
         server = args.server
 
@@ -61,6 +64,9 @@ def _main():
         mca.register_user(server, args.email, args.name, args.orcid,
                           args.globus_auth_token)
         return
+
+    if args.login:
+       login()
 
     # if we got this far we *must* have a filename (or identifier) arg
     if not args.filename:
