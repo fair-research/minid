@@ -3,7 +3,6 @@ Minimal Viable Identifier Client
 
 A minid (Minimal Viable Identifier) is an identifier that is sufficiently simple to make creation and use trivial, while still having enough substance to make data easily findable, accessible, interoperable, and reusable (FAIR). 
 
-The minid server code is avaialble at `https://github.com/fair-research/minid-server <https://github.com/fair-research/minid-server>`_
 
 Installation
 ------------
@@ -14,58 +13,58 @@ The minid client and CLI is avaialble on PyPI. You can install it with the follo
   
 Alternatively, you can download the source code and install using setup tools::
 
-  $ git clone git@github.com:ini-bdds/minid.git
+  $ git clone https://github.com/fair-research/minid
   
   $ python setup.py install
-
-Configuration
--------------
-
-Before using the API you first need to validate your email address. Enter the following command::
-
-  $ minid --register_user --email <email> --name <name> [--orcid <orcid>]
-
-A unique code will be sent to your email address. You must present this code along with your 
-email address when accessing the API. As a convenience you can specify this information in 
-a minid configuration file (`~/.minid/minid-config.cfg`)
-
-
-.. code-block:: ini
-
-    [general]
-    minid_server: http://minid.bd2k.org/minid
-    user: <Name>
-    email: <Email>
-    orcid: <optional Orcid>
-    code: <Code>
-
 
 Usage
 -----
 
 The CLI supports the following simple operations (Note: the `--test` flag creates names in a test namespace that is removed periodically; remove that flag to create production minids.): 
 
-* Create a new identifier (the `--location` option, if provided, must be at the end)::
+* Login with Globus::
 
-    $ minid --test --register [--title <title>] <file_name> [--locations <loc1>..<locN>]
+    $ minid login
+
+* Create a new identifier::
+
+    $ minid register --test [--title <title>] <file_name> [--locations <loc1>..<locN>]
     
 * Retrieve metadata about a file::
 
-    $ minid --test <file_name>
+    $ minid <file_name>
     
 * Retrieve metadata about an identifier::
 
-    $ minid --test <identifier>
+    $ minid <identifier>
 
-* Update metadata about an identifier:: 
+* Update metadata about an identifier::
 
-    $ minid --test --update [--title <title>] [--status <status>] [--obsoleted_by <minid>] [--locations <loc1> <loc2>] <identifier>
-    
+    $ minid --update [--test] [--title <title>] [--locations <loc1> <loc2>] <identifier>
+
+* Logout to clear credentials::
+
+    $ minid logout
+
 *  View all minid options:: 
 
     $ minid -h
 
 Landing pages are accessible via the minid website: minid.bd2k.org/minid/landingpage/<identifier>. 
+
+Scripting
+---------
+
+You can easily do all of the above commands in a python script::
+
+    from minid_client import login, logout, MinidClient, config
+    # If you are working locally, you can reuse your tokens from the config
+    tokens = config.load_tokens()
+    # If you want to send this script to others, you can trigger a login flow
+    tokens = login()
+    client = MinidClient(tokens['identifiers.globus.org'])
+    client.register('foo.txt', title='My Foo File', locations=['http://example.com/foo.txt'])
+    logout(tokens)
 
 
 file manifest format

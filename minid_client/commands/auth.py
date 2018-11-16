@@ -53,9 +53,9 @@ log = logging.getLogger(__name__)
 def login(args):
     try:
         if not args.force:
-            config.load_tokens()
-            log.info('You are already logged in.')
-            return
+            if config.load_tokens():
+                log.info('You are already logged in.')
+                return
     except Exception as e:
         log.debug('Loading tokens failed, proceeding to login...')
 

@@ -17,7 +17,7 @@ limitations under the License.
 from __future__ import print_function
 from minid_client.commands.argparse_ext import subcommand
 from minid_client.commands import subparsers
-from minid_client import __VERSION__
+from minid_client.version import __VERSION__
 
 
 @subcommand([], parent=subparsers, help='Show the current version and exit')
