@@ -24,6 +24,7 @@ from minid_client.minid_client_api import MinidClient
 
 log = logging.getLogger(__name__)
 
+
 @subcommand(
     [
         argument(
@@ -50,7 +51,7 @@ log = logging.getLogger(__name__)
 def register(args):
     cli = MinidClient(config.load_tokens().get('identifiers.globus.org'))
     return cli.register(title=args.title, locations=args.locations,
-                         test=args.test, filename=args.filename)
+                        test=args.test, filename=args.filename)
 
 
 @subcommand([
@@ -88,4 +89,3 @@ def check(args):
     if not args.entity.startswith('ark:/'):
         log.warning('File lookups are not yet supported.')
     return cli.check(args.entity)
-

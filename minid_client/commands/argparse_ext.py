@@ -16,7 +16,7 @@ limitations under the License.
 
 # Pattern inspired and built from:
 # https://gist.github.com/mivade/384c2c41c3a29c637cb6c603d4197f9f
-from minid_client.config import config
+
 
 def argument(*name_or_flags, **kwargs):
     """Convenience function to properly format arguments to pass to the

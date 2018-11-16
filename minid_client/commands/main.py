@@ -22,6 +22,7 @@ from minid_client.commands import auth, minid, misc  # noqa
 
 log = logging.getLogger(__name__)
 
+
 def main():
     logger = logging.getLogger('minid_client')
     logger.addHandler(logging.StreamHandler())
@@ -30,8 +31,6 @@ def main():
     cli.add_argument('--quiet', action="store_true", help="suppress output")
     cli.add_argument('--verbose', action="store_true", help="detailed output")
     cli.add_argument('--json', action="store_true", help="json output")
-
-
 
     args = cli.parse_args()
     if args.verbose:
@@ -46,8 +45,6 @@ def main():
     else:
         try:
             ret = args.func(args)
-            # These two don't make API calls:
-            #if subcommand not in ('login', 'logout'):
             # These subcommands all return minids
             if subcommand in ('register', 'update', 'check'):
                 if args.json:
@@ -56,17 +53,7 @@ def main():
                     pretty_print_minid(ret.data)
         except Exception as e:
             log.exception(e)
-        # except IdentifierNotLoggedIn as err:
-        #     log.info(err)
-        #     msg = "Not logged in. Use:\n  identifier login\nto log in."
-        #     print(msg, file=sys.stderr)
-        # except IdentifierClientError as nce:
-        #     print(
-        #         'Command {} failed with HTTP Status code {}, details:\n{}'.
-        #         format(subcommand, nce.http_status, nce.message),
-        #         file=sys.stderr)
-        # except ValueError as ve:
-        #     print(ve)
+
 
 def pretty_print_minid(command_json):
     """Minid specific function to print minid relevant fields to the console
@@ -79,7 +66,7 @@ def pretty_print_minid(command_json):
         {
             'title': 'Checksums',
             'func': lambda m: '\n'.join(['{} ({})'.format(c['value'],
-                                                           c['function'])
+                                                          c['function'])
                                         for c in m['checksums']])
         },
         {

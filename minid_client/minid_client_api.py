@@ -57,7 +57,6 @@ class MinidClient:
         client = NativeAppAuthClient(CLIENT_ID,
                                      app_name=self.NAME)
 
-
         if token_set:
             refresh_requires = {'refresh_token', 'access_token', 'at_expires'}
             if refresh_requires.issubset(token_set):
@@ -79,7 +78,6 @@ class MinidClient:
             app_name=self.NAME,
             authorizer=authorizer
         )
-
 
     def register(self, filename, title='', locations=[], test=False):
         """
@@ -141,7 +139,6 @@ class MinidClient:
         if not algorithm:
             algorithm = hashlib.sha256()
             log.debug("Using hash algorithm: {}".format(algorithm))
-
 
         log.debug('Computing checksum for {} using {}'.format(file_path,
                                                               algorithm))

@@ -18,7 +18,8 @@ from globus_sdk import native_auth, NativeAppAuthClient
 
 log = logging.getLogger(__name__)
 
-#CLIENT_ID = 'aa334131-1b9c-44e4-b9ff-ee1600863128'
+# The Minid Client ID needs to be added to the identifiers whitelist
+# CLIENT_ID = 'aa334131-1b9c-44e4-b9ff-ee1600863128'
 CLIENT_ID = 'b61613f8-0da8-4be7-81aa-1c89f2c0fe9f'
 SCOPES = ('https://auth.globus.org/scopes/'
           'identifiers.globus.org/create_update',)
@@ -31,6 +32,7 @@ def login(refresh_tokens=False, no_local_server=False, no_browser=False):
                        no_local_server=no_local_server,
                        no_browser=no_browser
                        )
+
 
 def logout(tokens):
     try:
