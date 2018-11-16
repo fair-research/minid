@@ -1,3 +1,3 @@
 requests>=2.18.4
-# -e git+git@github.com:NickolausDS/globus-identifiers-client@argument-field-changes#egg=globus-identifiers-client
-# -e git+git@github.com:NickolausDS/globus-sdk-python@feature/native_auth#egg=globus_sdk
+globus-identifiers-client
+globus-sdk>=1.4.0
