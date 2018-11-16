@@ -30,7 +30,8 @@ class Config(ConfigParser):
     ALLOWED_TOKENS = {'identifiers.globus.org'}
 
     def __init__(self):
-        super(Config, self).__init__()
+        # Do not use super(Config, self), ConfigParser is an old-style class
+        ConfigParser.__init__(self)
         self.init_config()
 
     def save(self):
@@ -40,17 +41,19 @@ class Config(ConfigParser):
 
     def load_tokens(self):
         try:
-            return deserialize_token_groups(dict(self['tokens']))
+            return deserialize_token_groups(dict(self.items('tokens')))
         except:
             return {}
 
     def save_tokens(self, tokens):
-        self['tokens'] = serialize_token_groups(tokens)
+        for name, value in serialize_token_groups(tokens).items():
+            self.set('tokens', name, value)
         self.save()
 
     def init_config(self, config_file=None):
-        self.clear()
-        self['tokens'] = {}
+        for sec in self.sections():
+            self.remove_section(sec)
+        self.add_section('tokens')
         self.CFG_FILENAME = config_file or self.CFG_DEFAULT
         if os.path.exists(self.CFG_FILENAME):
             self.read(self.CFG_FILENAME)
