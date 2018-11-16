@@ -1,231 +1,154 @@
-import sys
+"""
+Copyright 2016 University of Chicago, University of Southern California
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+"""
 import os
-import requests
 import logging
 import hashlib
-import json
-import datetime
-from collections import OrderedDict
 
-MINID_PREFIX = "minid:"
-MINID_ARK_ID = "ark:/57799/"
+from globus_sdk import NativeAppAuthClient
+from globus_sdk import AccessTokenAuthorizer, RefreshTokenAuthorizer
 
-logger = logging.getLogger(__name__)
+from identifiers_client.identifiers_api import IdentifierClient
+from identifiers_client.config import config as ic_config
+
+from minid_client.auth import CLIENT_ID
+
+log = logging.getLogger(__name__)
 
 
-def compute_checksum(file_path, algorithm=None, block_size=65536):
-    if not algorithm:
-        logger.debug("creating algorithm")
-        algorithm = hashlib.sha256()
+class MinidClient:
 
-    logger.info("Computing checksum for %s using %s" % (file_path, algorithm))
-    with open(os.path.abspath(file_path), 'rb') as open_file:
-        buf = open_file.read(block_size)
-        while len(buf) > 0:
-            algorithm.update(buf)
+    NAME = 'Minid Client'
+    NAMESPACE = 'kHAAfCby2zdn'
+    TEST_NAMESPACE = 'HHxPIZaVDh9u'
+
+    def __init__(self, token_set=None, on_refresh=None):
+        """
+        Create an identifier client. The client returned will depend on the
+         token set used:
+             token_set: None -- Only read access allowed
+             token_set: Dict containing 'access_token' -- Temporary Client
+             token_set: Dict containing 'access_token', 'refresh_token',
+                        'at_expires' -- Refresh Client
+         ** Parameters **
+          ``token_set`` (* dict or None *)
+          Tokens returned from an auth flow with the identifiers scope
+          ``on_refresh`` (* function *)
+          Function to call on refresh events when tokens expire. Useful for
+          saving new tokens. Example: lambda tokens: save_my_tokens(tokens)
+        """
+        self.identifiers_client = self._get_identifier_client(token_set,
+                                                              on_refresh)
+
+    def _get_identifier_client(self, token_set, on_refresh):
+        authorizer = None
+        client = NativeAppAuthClient(CLIENT_ID,
+                                     app_name=self.NAME)
+
+
+        if token_set:
+            refresh_requires = {'refresh_token', 'access_token', 'at_expires'}
+            if refresh_requires.issubset(token_set):
+                if on_refresh is not None or not callable(on_refresh):
+                    raise ValueError('on_refresh is not a function!')
+                authorizer = RefreshTokenAuthorizer(
+                    token_set['refresh_token'],
+                    client,
+                    token_set['access_token'],
+                    token_set['at_expires'],
+                    on_refresh=on_refresh
+                    )
+            elif token_set.get('access_token'):
+                authorizer = AccessTokenAuthorizer(token_set['access_token'])
+        log.debug('Authorizer: {}'.format(authorizer))
+        return IdentifierClient(
+            "identifier",
+            base_url=ic_config.get('client', 'service_url'),
+            app_name=self.NAME,
+            authorizer=authorizer
+        )
+
+
+    def register(self, filename, title='', locations=[], test=False):
+        """
+        ** Parameters **
+          ``filename`` (*string*)
+          The filename used to create a minid
+          ``title`` (* string *)
+          The title used to refer to the minid. Defaults to filename
+          ``locations`` (* array of strings *)
+          Network accessible locations for the given file
+          ``test`` (* boolean *)
+          Create the minid in a non-permanent test namespace
+        """
+        namespace = self.TEST_NAMESPACE if test is True else self.NAMESPACE
+        metadata = {
+            '_profile': 'erc',
+            'erc.what': title or filename
+        }
+        checksums = [{
+            'function': 'sha256',
+            'value': self.compute_checksum(filename, hashlib.sha256())
+        }]
+        return self.identifiers_client.create_identifier(namespace=namespace,
+                                                         visible_to=['public'],
+                                                         metadata=metadata,
+                                                         location=locations,
+                                                         checksums=checksums
+                                                         )
+
+    def update(self, minid, title='', locations=[]):
+        """
+        ** Parameters **
+          ``minid`` (*string*)
+          The Minid to update
+          ``title`` (* string *)
+          The title used to refer to the minid. Defaults to filename
+          ``locations`` (* array of strings *)
+          Network accessible locations for the given file
+          ``test`` (* boolean *)
+          Create the minid in a non-permanent test namespace
+        """
+        metadata = {}
+        if title:
+            metadata['erc.what'] = title
+        return self.identifiers_client.update_identifier(minid,
+                                                         metadata=metadata,
+                                                         location=locations)
+
+    def check(self, minid):
+        """
+        ** Parameters **
+          ``string`` (*string*)
+          The Minid to check
+        """
+        return self.identifiers_client.get_identifier(minid)
+
+    @staticmethod
+    def compute_checksum(file_path, algorithm=None, block_size=65536):
+        if not algorithm:
+            algorithm = hashlib.sha256()
+            log.debug("Using hash algorithm: {}".format(algorithm))
+
+
+        log.debug('Computing checksum for {} using {}'.format(file_path,
+                                                              algorithm))
+        with open(os.path.abspath(file_path), 'rb') as open_file:
             buf = open_file.read(block_size)
-    open_file.close()
-    return algorithm.hexdigest()
-
-
-def get_entities(server, name, test):
-    logger.info("Checking if the %sentity %s already exists on the server: %s" %
-                ("TEST " if test else "", name, server))
-    query = ""
-    if test:
-        query = "?test=true"
-
-    # TODO: this can likely be undone once the server supports "minid:xyz" resolution
-    name = minid2ark(name)
-
-    r = requests.get("%s/%s%s" % (server, name, query), headers={"Accept": "application/json"})
-    if r.status_code == 404:
-        return None
-    return r.json()
-
-
-def get_most_recent_active_entity(entities):
-    active = list()
-    for k, v in entities.items():
-        if not v['status'] == "ACTIVE":
-            continue
-        else:
-            if v.get('obsoleted_by') is None:
-                active.append(entities[k])
-    active_sorted = sorted(active,
-                           key=lambda x: datetime.datetime.strptime(x["created"], '%Y-%m-%dT%H:%M:%S.%f'),
-                           reverse=True)
-    return active_sorted[0]
-
-
-def create_entity(server, entity, globus_auth_token=None):
-    headers = {"Accept": "application/json"}
-    if globus_auth_token is not None:
-        headers.update({"Authorization": "Bearer " + globus_auth_token})
-    r = requests.post(server, json=entity, headers=headers)
-    if r.status_code in [200, 201]:
-        return r.json()
-    elif r.status_code in [401, 403, 500]:
-        raise MinidAPIException('Failed to create entity', code=r.status_code, **r.json())
-    else:
-        logger.error("Error creating entity (%s) -- check parameters or config file for invalid values" % r.status_code)
-
-
-def entity_json(email, code, checksum, checksum_function, locations, title, test, content_key):
-    entity = {"email":  email, "code": code, "checksum": checksum}
-    if checksum_function:
-        entity["checksum_function"] = checksum_function
-    if test:
-        entity["test"] = test
-    if locations:
-        entity["locations"] = locations
-    if title: 
-        entity["title"] = title
-    if content_key:
-        entity["content_key"] = content_key
-    return entity
-
-
-def print_entity(entity, as_json):
-    if as_json:
-        print(json.dumps(entity))
-    else:
-        print("Identifier: %s" % ark2minid(entity["identifier"]))
-        print("Created by: %s (%s)" % (entity["creator"], entity["orcid"]))
-        print("Created: %s" % entity["created"])
-        print("Checksum: %s" % entity["checksum"])
-
-        if entity["content_key"]:
-            print("Content Key: %s" % entity["content_key"])
-
-        print("Status: %s" % entity["status"])
-        if entity["obsoleted_by"]:
-            print("Obsoleted by: %s" % entity["obsoleted_by"])
-        print("Locations:")
-        for l in entity["locations"]:
-            print("  %s - %s" % (l["creator"], l["uri"]))
-        print("Title:")
-        for t in entity["titles"]:
-            print("  %s - %s" % (t["creator"], t["title"]))
-
-
-def print_entities(entities, as_json):
-    for i, entity in entities.items():
-        print_entity(entity, as_json)
-        print("\n")
-
-
-def register_user(server, email, name, orcid, globus_auth_token=None):
-    raise NotImplemented('Command removed. Please use "minid login" instead.')
-
-
-def register_entity(server, checksum, email, code,
-                    url=None, title='', test=False, content_key=None,
-                    globus_auth_token=None, checksum_function=None):
-    if not email:
-        raise MinidAPIException('No email specified for registration.',
-                                code=None)
-
-    logger.info("Creating new identifier")
-    result = create_entity(server,
-                           entity_json(email, code, checksum, checksum_function, url, title, test, content_key),
-                           globus_auth_token)
-
-    if result:
-        # TODO: this can likely be undone once the server supports "minid:xyz" resolution
-        identifier = ark2minid(result["identifier"])
-        logger.info("Created/updated minid: %s" % identifier)
-        return identifier
-
-
-def register_entities(server, email, code, entity_manifest,
-                      test=False, content_key=None, globus_auth_token=None):
-    results = list()
-    md5_func = "md5"
-    sha256_func = "sha256"
-    with open(entity_manifest, "r") as manifest:
-        line = manifest.readline().lstrip()
-        manifest.seek(0)
-        is_json_stream = False
-        if line.startswith('{'):
-            entities = manifest
-            is_json_stream = True
-        else:
-            entities = json.load(manifest, object_pairs_hook=OrderedDict)
-
-        for entity in entities:
-            if is_json_stream:
-                entity = json.loads(entity, object_pairs_hook=OrderedDict)
-
-            url = entity['url'] if isinstance(entity['url'], list) else [entity['url']]
-            filename = entity['filename']
-            metadata = entity.get("metadata", {})
-            title = metadata.get("title", os.path.basename(filename))
-            md5 = entity.get(md5_func)
-            sha256 = entity.get(sha256_func)
-            if sha256:
-                checksum = sha256
-                checksum_function = sha256_func.upper()
-            else:
-                checksum = md5
-                checksum_function = md5_func.upper()
-            entities = get_entities(server, checksum, test)
-            if entities:
-                logging.warning("Entity already registered with checksum: %s. "
-                                "Will use the most recent active identifier for this entity." % checksum)
-                current_entity = get_most_recent_active_entity(entities)
-                entity['url'] = ark2minid(current_entity["identifier"])
-            else:
-                result = register_entity(server, checksum, email, code,
-                                         url, title, test, content_key,
-                                         globus_auth_token, checksum_function)
-                entity['url'] = result
-            results.append(entity)
-
-        return results
-
-
-def update_entity(server, name, entity, email, code, globus_auth_token=None):
-    if not entity:
-        logger.info("No entity found to update")
-        return None
-
-    entity['email'] = email
-    entity['code'] = code
-    headers = {"Accept": "application/json"}
-    if globus_auth_token is not None:
-        headers["Authorization"] = "Bearer " + globus_auth_token
-
-    r = requests.put("%s/%s" % (server, minid2ark(name)), json=entity, headers=headers)
-
-    if r.status_code in [200, 201]:
-        return r.json()
-    if r.status_code in [401, 403, 500]:
-        raise MinidAPIException('Failed to update entity', code=r.status_code, **r.json())
-    else:
-        logger.error("Error updating entity (%s, %s) -- check parameters or config file for invalid values" % (
-            r.status_code, r.text))
-
-
-def ark2minid(identifier):
-    if identifier.startswith(MINID_ARK_ID):
-        identifier = identifier.replace(MINID_ARK_ID, MINID_PREFIX)
-    return identifier
-
-
-def minid2ark(identifier):
-    if identifier.startswith(MINID_PREFIX):
-        identifier = identifier.replace(MINID_PREFIX, MINID_ARK_ID)
-    return identifier
-
-
-class MinidAPIException(Exception):
-    def __init__(self, error, message='', code='NA', type='Uncategorized', user=None):
-        logger.error("%s (%s - %s): %s" %
-                     (error, code, type, message))
-        super(MinidAPIException, self).__init__(message)
-        self.error = error
-        self.message = message
-        self.user = user
-        self.code = code
-        self.type = type
+            while len(buf) > 0:
+                algorithm.update(buf)
+                buf = open_file.read(block_size)
+        open_file.close()
+        return algorithm.hexdigest()

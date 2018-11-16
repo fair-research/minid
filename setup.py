@@ -31,7 +31,9 @@ setup(
     license='Apache 2.0',
     entry_points={
         'console_scripts': [
-            'minid = minid_client.minid:main'
+            'minid = minid_client.commands.main:main',
+            # Minid "Classic". Used for testing, Don't let this pass peer review...
+            'minc = minid_client.minid:main'
         ]
     }
 )

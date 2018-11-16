@@ -8,3 +8,7 @@ def configure_logging(level=logging.INFO, logpath=None):
         logging.basicConfig(filename=logpath, level=level, format=log_format)
     else:
         logging.basicConfig(level=level, format=log_format)
+
+
+# https://docs.python.org/3/howto/logging.html#configuring-logging-for-a-library  # noqa
+logging.getLogger('minid_client').addHandler(logging.NullHandler())
