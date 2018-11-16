@@ -60,6 +60,10 @@ def pretty_print_minid(command_json):
     in a human readable format. Only supports select fields."""
     fields = [
         {
+            'title': 'Minid',
+            'func': lambda m: m['identifier']
+        },
+        {
             'title': 'Title',
             'func': lambda m: m['metadata'].get('erc.what')
         },
@@ -88,7 +92,7 @@ def pretty_print_minid(command_json):
         }
     ]
     prepped_lines = [(f['title'], f['func'](command_json)) for f in fields]
-    output = ['Minid: {}\n'.format(command_json['identifier'])]
-    output.extend(['{0:20} {1}'.format('{}:'.format(title), text or '')
-                  for title, text in prepped_lines])
-    print('\n'.join(output))
+    output = ['{0:20} {1}'.format('{}:'.format(title), text or '')
+              for title, text in prepped_lines]
+    output = '\n{}'.format('\n'.join(output))
+    print(output)
