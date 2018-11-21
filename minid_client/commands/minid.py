@@ -16,7 +16,7 @@ limitations under the License.
 from __future__ import print_function
 import logging
 
-from minid_client.commands import subparsers
+from minid_client.commands import subparsers, minid_client
 from minid_client.commands.argparse_ext import subcommand, argument
 from minid_client.config import config
 from minid_client.minid_client_api import MinidClient
@@ -49,9 +49,8 @@ log = logging.getLogger(__name__)
     help='Register a new Minid',
 )
 def register(args):
-    cli = MinidClient(config.load_tokens().get('identifiers.globus.org'))
-    return cli.register(title=args.title, locations=args.locations,
-                        test=args.test, filename=args.filename)
+    return minid_client.register(title=args.title, locations=args.locations,
+                                 test=args.test, filename=args.filename)
 
 
 @subcommand([
@@ -71,8 +70,8 @@ def register(args):
     help='Update an existing Minid'
 )
 def update(args):
-    cli = MinidClient(config.load_tokens().get('identifiers.globus.org'))
-    return cli.update(args.minid, title=args.title, locations=args.locations)
+    return minid_client.update(args.minid, title=args.title,
+                               locations=args.locations)
 
 
 @subcommand(
@@ -85,7 +84,6 @@ def update(args):
     help='Lookup a minid or check if a given file has been registered',
 )
 def check(args):
-    cli = MinidClient(config.load_tokens().get('identifiers.globus.org'))
     if not args.entity.startswith('ark:/'):
         log.warning('File lookups are not yet supported.')
-    return cli.check(args.entity)
+    return minid_client.check(args.entity)

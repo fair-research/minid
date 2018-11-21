@@ -15,6 +15,10 @@ limitations under the License.
 """
 
 from argparse import ArgumentParser
+from minid_client.minid_client_api import MinidClient
+from minid_client.config import config
 
 cli = ArgumentParser()
 subparsers = cli.add_subparsers(dest="subcommand")
+
+minid_client = MinidClient(config.load_tokens().get('identifiers.globus.org'))
