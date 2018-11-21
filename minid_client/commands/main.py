@@ -16,6 +16,7 @@ limitations under the License.
 import logging
 import json
 
+from identifiers_client.identifiers_api import IdentifierClientError
 from minid_client.commands import cli
 # Importing the commands loads them into argparse.
 from minid_client.commands import auth, minid, misc  # noqa
@@ -51,8 +52,10 @@ def main():
                     print(json.dumps(ret.data, indent=2))
                 else:
                     pretty_print_minid(ret.data)
-        except Exception as e:
-            log.exception(e)
+        except IdentifierClientError as ice:
+            if ice.http_status == 401:
+                log.error('Authentication required, please login and try '
+                          'again.')
 
 
 def pretty_print_minid(command_json):

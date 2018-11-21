@@ -18,9 +18,6 @@ import logging
 
 from minid_client.commands import subparsers, minid_client
 from minid_client.commands.argparse_ext import subcommand, argument
-from minid_client.config import config
-from minid_client.minid_client_api import MinidClient
-
 
 log = logging.getLogger(__name__)
 
