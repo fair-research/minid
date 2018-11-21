@@ -25,14 +25,34 @@ def argument(*name_or_flags, **kwargs):
     return list(name_or_flags), kwargs
 
 
+def shared_argument(arg):
+    """Convenience function that denotes this argument is used in multiple
+    places."""
+    return arg
+
+
 def subcommand(args, parent, **kwargs):
     def decorator(func):
+        shared_args = kwargs.pop('shared_arguments', {})
         parser = parent.add_parser(
             func.__name__.replace('_', '-'),
             description=func.__doc__,
             **kwargs)
         for arg in args:
-            parser.add_argument(*arg[0], **arg[1])
+            if isinstance(arg, tuple):
+                arg_name, kw_args = arg
+                parser.add_argument(*arg_name, **kw_args)
+            elif isinstance(arg, str):
+                arg_name = [arg]
+                kw_args = shared_args.get(arg)
+                if not arg:
+                    raise ValueError('Shared argument {} not found in {}'
+                                     ''.format(arg_name, func.__name__))
+                parser.add_argument(*arg_name, **kw_args)
+            else:
+                raise ValueError('Invalid subcommand {} for {}'.format(
+                    arg, func.__name__))
+
         parser.set_defaults(func=func)
         return func
 

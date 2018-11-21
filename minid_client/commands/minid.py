@@ -17,20 +17,26 @@ from __future__ import print_function
 import logging
 
 from minid_client.commands import subparsers, minid_client
-from minid_client.commands.argparse_ext import subcommand, argument
+from minid_client.commands.argparse_ext import (subcommand, argument,
+                                                shared_argument)
 
 log = logging.getLogger(__name__)
+
+CREATE_UPDATE_ARGS = {
+    '--title': {
+        'help': 'Title for the minid. Defaults to filename'
+    },
+    '--locations': {
+        'nargs': '+',
+        'help': 'Remotely accessible location(s) for the file'
+    }
+}
 
 
 @subcommand(
     [
-        argument(
-            '--title',
-            help='Title for the minid. Defaults to filename'),
-        argument(
-            "--locations",
-            nargs='+',
-            help='Remotely accessible location(s) for the file'),
+        shared_argument('--title'),
+        shared_argument('--locations'),
         argument(
             "--test",
             action='store_true',
@@ -43,27 +49,24 @@ log = logging.getLogger(__name__)
         ),
     ],
     parent=subparsers,
+    shared_arguments=CREATE_UPDATE_ARGS,
     help='Register a new Minid',
 )
 def register(args):
-    return minid_client.register(title=args.title, locations=args.locations,
+    return minid_client.register(
                                  test=args.test, filename=args.filename)
 
 
 @subcommand([
-    argument(
-        '--title',
-        help='Title for the minid. Defaults to filename'),
-    argument(
-        "--locations",
-        nargs='+',
-        help='Remotely accessible location(s) for the file'),
+    shared_argument('--title'),
+    shared_argument('--locations'),
     argument(
         "minid",
         help='Minid to update'
     ),
 ],
     parent=subparsers,
+    shared_arguments=CREATE_UPDATE_ARGS,
     help='Update an existing Minid'
 )
 def update(args):
