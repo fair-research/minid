@@ -68,10 +68,12 @@ def login(args):
 
 @subcommand([], parent=subparsers, help='Logout to clear stored credentials')
 def logout(args):
-    try:
+    tokens = config.load_tokens()
+    if tokens:
         minid_client.auth.logout(config.load_tokens())
-        config['tokens'] = {}
+        config.remove_section('tokens')
+        config.add_section('tokens')
         config.save()
         log.info('You have been logged out.')
-    except:
-        log.info('You are not logged in.')
+    else:
+        log.info('No user logged in, no logout necessary.')

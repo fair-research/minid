@@ -35,10 +35,24 @@ def login(refresh_tokens=False, no_local_server=False, no_browser=False):
 
 
 def logout(tokens):
-    try:
-        client = NativeAppAuthClient(CLIENT_ID)
-        for tok_set in tokens.values():
-            log.debug("Revoking: {}".format(tok_set["resource_server"]))
-            client.oauth2_revoke_token(tok_set["access_token"])
-    except Exception as e:
-        log.debug('Failed to revoke tokens: ', e)
+    """
+    Revokes tokens in the same format received from login()
+
+    {"identifiers.globus.org": {
+        "access_token": "my_access_token",
+        "refresh_token": "my_refresh_token",
+        ...
+        }
+    }
+    Example:
+        tokens = login()
+        logout(tokens)
+    """
+    if not isinstance(tokens, dict) or not all([isinstance(d, dict)
+                                                for d in tokens.values()]):
+        raise ValueError('Expected dict of dicts containing "access_token" '
+                         'and "refresh_token".')
+    client = NativeAppAuthClient(CLIENT_ID)
+    for tok_set in tokens.values():
+        client.oauth2_revoke_token(tok_set.get('access_token'))
+        client.oauth2_revoke_token(tok_set.get('refresh_token'))
