@@ -53,7 +53,7 @@ CREATE_UPDATE_ARGS = {
     help='Register a new Minid',
 )
 def register(args):
-    return minid_client.register(
+    return minid_client.register(title=args.title, locations=args.locations,
                                  test=args.test, filename=args.filename)
 
 
