@@ -16,9 +16,9 @@ limitations under the License.
 from __future__ import print_function
 import logging
 
-from minid_client.commands import subparsers, minid_client
-from minid_client.commands.argparse_ext import (subcommand, argument,
-                                                shared_argument)
+from minid.commands import subparsers, minid_client
+from minid.commands.argparse_ext import (subcommand, argument,
+                                         shared_argument)
 
 log = logging.getLogger(__name__)
 

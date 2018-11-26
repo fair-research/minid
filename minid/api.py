@@ -23,7 +23,7 @@ from globus_sdk import AccessTokenAuthorizer, RefreshTokenAuthorizer
 from identifiers_client.identifiers_api import IdentifierClient
 from identifiers_client.config import config as ic_config
 
-from minid_client.auth import CLIENT_ID
+from minid.auth import CLIENT_ID
 
 log = logging.getLogger(__name__)
 

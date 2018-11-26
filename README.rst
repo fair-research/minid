@@ -40,7 +40,7 @@ The CLI supports the following simple operations (Note: the `--test` flag create
 
 * Update metadata about an identifier::
 
-    $ minid --update [--test] [--title <title>] [--locations <loc1> <loc2>] <identifier>
+    $ minid update [--test] [--title <title>] [--locations <loc1> <loc2>] <identifier>
 
 * Logout to clear credentials::
 
@@ -57,7 +57,7 @@ Scripting
 
 Auth for getting tokens is built into the client::
 
-    from minid_client import login, logout, config
+    from minid import login, logout, config
     # If you are working locally, you can reuse your tokens from the config
     tokens = config.load_tokens()
     # If you want to send a script to others, you can trigger a login flow
@@ -65,7 +65,7 @@ Auth for getting tokens is built into the client::
 
 Pass the tokens to the MinidClient and it is ready to go::
 
-    from minid_client import MinidClient
+    from minid import MinidClient
     client = MinidClient(tokens['identifiers.globus.org'])
     client.register('foo.txt', title='My Foo File', locations=['http://example.com/foo.txt'])
     logout(tokens)

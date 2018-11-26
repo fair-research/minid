@@ -17,9 +17,9 @@ import logging
 import json
 
 from identifiers_client.identifiers_api import IdentifierClientError
-from minid_client.commands import cli
+from minid.commands import cli
 # Importing the commands loads them into argparse.
-from minid_client.commands import auth, minid, misc  # noqa
+from minid.commands import auth, minid_ops, misc  # noqa
 
 log = logging.getLogger(__name__)
 

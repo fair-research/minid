@@ -16,10 +16,10 @@ limitations under the License.
 from __future__ import print_function
 import logging
 
-from minid_client.commands.argparse_ext import subcommand, argument
-from minid_client.commands import subparsers
-import minid_client.auth
-from minid_client.config import config
+from minid.commands.argparse_ext import subcommand, argument
+from minid.commands import subparsers
+import minid.auth
+from minid.config import config
 
 log = logging.getLogger(__name__)
 
@@ -59,9 +59,9 @@ def login(args):
     except Exception as e:
         log.debug('Loading tokens failed, proceeding to login...')
 
-    tokens = minid_client.auth.login(refresh_tokens=args.remember_me,
-                                     no_local_server=args.no_local_server,
-                                     no_browser=args.no_browser)
+    tokens = minid.auth.login(refresh_tokens=args.remember_me,
+                              no_local_server=args.no_local_server,
+                              no_browser=args.no_browser)
     config.save_tokens(tokens)
     log.info('You have been logged in.')
 
@@ -70,7 +70,7 @@ def login(args):
 def logout(args):
     tokens = config.load_tokens()
     if tokens:
-        minid_client.auth.logout(config.load_tokens())
+        minid.auth.logout(config.load_tokens())
         config.remove_section('tokens')
         config.add_section('tokens')
         config.save()

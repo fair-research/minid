@@ -14,11 +14,12 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-from argparse import ArgumentParser
-from minid_client.minid_client_api import MinidClient
-from minid_client.config import config
+from __future__ import print_function
+from minid.commands.argparse_ext import subcommand
+from minid.commands import subparsers
+from minid.version import __VERSION__
 
-cli = ArgumentParser()
-subparsers = cli.add_subparsers(dest="subcommand")
 
-minid_client = MinidClient(config.load_tokens().get('identifiers.globus.org'))
+@subcommand([], parent=subparsers, help='Show the current version and exit')
+def version(args):
+    print(__VERSION__)

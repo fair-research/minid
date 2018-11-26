@@ -3,7 +3,7 @@ import os
 
 version = {}
 here = os.path.abspath(os.path.dirname(__file__))
-with open(os.path.join(here, 'minid_client', 'version.py')) as f:
+with open(os.path.join(here, 'minid', 'version.py')) as f:
     exec(f.read(), {}, version)
 
 # Get the long description from the README file
@@ -41,7 +41,7 @@ setup(
     license='Apache 2.0',
     entry_points={
         'console_scripts': [
-            'minid = minid_client.commands.main:main',
+            'minid = minid.commands.main:main',
         ]
     }
 )
