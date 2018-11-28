@@ -17,8 +17,13 @@ limitations under the License.
 from argparse import ArgumentParser
 from minid.api import MinidClient
 from minid.config import config
+from minid.exc import TokensExpired
 
 cli = ArgumentParser()
 subparsers = cli.add_subparsers(dest="subcommand")
 
-minid_client = MinidClient(config.load_tokens().get('identifiers.globus.org'))
+try:
+    minid_client = MinidClient(config.load_tokens().get(
+        'identifiers.globus.org'))
+except TokensExpired:
+    minid_client = MinidClient()

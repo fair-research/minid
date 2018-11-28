@@ -18,6 +18,7 @@ import logging
 
 from minid.commands.argparse_ext import subcommand, argument
 from minid.commands import subparsers
+from minid.exc import TokensExpired
 import minid.auth
 from minid.config import config
 
@@ -56,6 +57,8 @@ def login(args):
             if config.load_tokens():
                 log.info('You are already logged in.')
                 return
+    except TokensExpired:
+        log.debug('Tokens expired, proceeding to login...')
     except Exception as e:
         log.debug('Loading tokens failed, proceeding to login...')
 
