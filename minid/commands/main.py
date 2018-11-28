@@ -15,6 +15,7 @@ limitations under the License.
 """
 import logging
 import json
+import traceback
 
 from identifiers_client.identifiers_api import IdentifierClientError
 from minid.commands import cli
@@ -53,9 +54,21 @@ def main():
                 else:
                     pretty_print_minid(ret.data)
         except IdentifierClientError as ice:
-            if ice.http_status == 401:
+            if not args.json and ice.http_status == 401:
                 log.error('Authentication required, please login and try '
                           'again.')
+            elif args.json:
+                print(json.dumps(ice.raw_json, indent=2))
+            else:
+                error = str(ice)
+                if ice.raw_json and ice.raw_json.get('message'):
+                    error = ice.raw_json['message']
+                log.error(error)
+        except Exception as e:
+            log.error('An unexpected error occurred, please file a bug report '
+                      'and we will fix this as soon as we can.')
+            if args.verbose:
+                traceback.print_exc()
 
 
 def pretty_print_minid(command_json):
