@@ -25,7 +25,7 @@ log = logging.getLogger(__name__)
 
 
 def main():
-    logger = logging.getLogger('minid_client')
+    logger = logging.getLogger('minid')
     logger.addHandler(logging.StreamHandler())
     logger.setLevel(logging.INFO)
 
