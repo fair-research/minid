@@ -16,9 +16,8 @@ limitations under the License.
 from __future__ import print_function
 import logging
 
-from minid.commands import subparsers, minid_client
-from minid.commands.argparse_ext import (subcommand, argument,
-                                         shared_argument)
+from minid.commands.cli import subparsers
+from minid.commands.argparse_ext import subcommand, argument, shared_argument
 
 log = logging.getLogger(__name__)
 
@@ -52,7 +51,7 @@ CREATE_UPDATE_ARGS = {
     shared_arguments=CREATE_UPDATE_ARGS,
     help='Register a new Minid',
 )
-def register(args):
+def register(minid_client, args):
     return minid_client.register(title=args.title, locations=args.locations,
                                  test=args.test, filename=args.filename)
 
@@ -69,7 +68,7 @@ def register(args):
     shared_arguments=CREATE_UPDATE_ARGS,
     help='Update an existing Minid'
 )
-def update(args):
+def update(minid_client, args):
     return minid_client.update(args.minid, title=args.title,
                                locations=args.locations)
 
@@ -83,7 +82,7 @@ def update(args):
     parent=subparsers,
     help='Lookup a minid or check if a given file has been registered',
 )
-def check(args):
+def check(minid_client, args):
     if not args.entity.startswith('ark:/'):
         log.warning('File lookups are not yet supported.')
     return minid_client.check(args.entity)

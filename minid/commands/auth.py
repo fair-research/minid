@@ -17,7 +17,7 @@ from __future__ import print_function
 import logging
 
 from minid.commands.argparse_ext import subcommand, argument
-from minid.commands import subparsers
+from minid.commands.cli import subparsers
 from minid.exc import TokensExpired
 import minid.auth
 from minid.config import config
@@ -51,7 +51,7 @@ log = logging.getLogger(__name__)
     parent=subparsers,
     help='Login to register Minids',
 )
-def login(args):
+def login(minid_client, args):
     try:
         if not args.force:
             if config.load_tokens():
@@ -70,7 +70,7 @@ def login(args):
 
 
 @subcommand([], parent=subparsers, help='Logout to clear stored credentials')
-def logout(args):
+def logout(minid_client, args):
     tokens = config.load_tokens()
     if tokens:
         minid.auth.logout(config.load_tokens())

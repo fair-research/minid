@@ -14,11 +14,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 import logging
-import json
-import traceback
 
-from identifiers_client.identifiers_api import IdentifierClientError
-from minid.commands import cli
+from minid.commands.cli import cli, execute_command
 # Importing the commands loads them into argparse.
 from minid.commands import auth, minid_ops, misc  # noqa
 
@@ -30,85 +27,5 @@ def main():
     logger.addHandler(logging.StreamHandler())
     logger.setLevel(logging.INFO)
 
-    cli.add_argument('--quiet', action="store_true", help="suppress output")
-    cli.add_argument('--verbose', action="store_true", help="detailed output")
-    cli.add_argument('--json', action="store_true", help="json output")
-
     args = cli.parse_args()
-    if args.verbose:
-        logger.setLevel(logging.DEBUG)
-    if args.quiet:
-        logger.setLevel(logging.CRITICAL)
-
-    subcommand = args.subcommand
-
-    if subcommand is None:
-        cli.print_help()
-    else:
-        try:
-            ret = args.func(args)
-            # These subcommands all return minids
-            if subcommand in ('register', 'update', 'check'):
-                if args.json:
-                    print(json.dumps(ret.data, indent=2))
-                else:
-                    pretty_print_minid(ret.data)
-        except IdentifierClientError as ice:
-            if not args.json and ice.http_status == 401:
-                log.error('Authentication required, please login and try '
-                          'again.')
-            elif args.json:
-                print(json.dumps(ice.raw_json, indent=2))
-            else:
-                error = str(ice)
-                if ice.raw_json and ice.raw_json.get('message'):
-                    error = ice.raw_json['message']
-                log.error(error)
-        except Exception as e:
-            log.error('An unexpected error occurred, please file a bug report '
-                      'and we will fix this as soon as we can.')
-            if args.verbose:
-                traceback.print_exc()
-
-
-def pretty_print_minid(command_json):
-    """Minid specific function to print minid relevant fields to the console
-    in a human readable format. Only supports select fields."""
-    fields = [
-        {
-            'title': 'Minid',
-            'func': lambda m: m['identifier']
-        },
-        {
-            'title': 'Title',
-            'func': lambda m: m['metadata'].get('erc.what')
-        },
-        {
-            'title': 'Checksums',
-            'func': lambda m: '\n'.join(['{} ({})'.format(c['value'],
-                                                          c['function'])
-                                        for c in m['checksums']])
-        },
-        {
-            'title': 'Created',
-            'func': lambda m: m['metadata'].get('erc.when')
-        },
-        {
-            'title': 'Landing Page',
-            'func': lambda m: m['landing_page']
-        },
-        {
-            'title': 'EZID Landing Page',
-            'func': lambda m: ('https://ezid.cdlib.org/id/{}'.format(
-                               m['identifier']))
-        },
-        {
-            'title': 'Locations',
-            'func': lambda m: ', '.join(m['location'])
-        }
-    ]
-    prepped_lines = [(f['title'], f['func'](command_json)) for f in fields]
-    output = ['{0:20} {1}'.format('{}:'.format(title), text or '')
-              for title, text in prepped_lines]
-    output = '\n{}'.format('\n'.join(output))
-    print(output)
+    execute_command(cli, args, logger)
