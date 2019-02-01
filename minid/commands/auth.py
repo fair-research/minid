@@ -59,7 +59,7 @@ def login(minid_client, args):
                 return
     except TokensExpired:
         log.debug('Tokens expired, proceeding to login...')
-    except Exception as e:
+    except Exception:
         log.debug('Loading tokens failed, proceeding to login...')
 
     tokens = minid.auth.login(refresh_tokens=args.remember_me,

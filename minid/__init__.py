@@ -18,7 +18,6 @@ logging.getLogger('minid').addHandler(logging.NullHandler())
 
 __all__ = [
 
-    'login', 'logout',
 
     'config',
 

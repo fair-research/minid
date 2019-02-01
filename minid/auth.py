@@ -14,7 +14,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 import logging
-from globus_sdk import native_auth, NativeAppAuthClient
+from native_login import NativeClient
+
 
 log = logging.getLogger(__name__)
 
@@ -24,14 +25,17 @@ CLIENT_ID = 'b61613f8-0da8-4be7-81aa-1c89f2c0fe9f'
 SCOPES = ('https://auth.globus.org/scopes/'
           'identifiers.globus.org/create_update',)
 
+client = NativeClient(client_id=CLIENT_ID,
+                      app_name='Minid Client',
+                      token_storage=None)
+
 
 def login(refresh_tokens=False, no_local_server=False, no_browser=False):
-    return native_auth(client_id=CLIENT_ID,
-                       requested_scopes=SCOPES,
-                       refresh_tokens=refresh_tokens,
-                       no_local_server=no_local_server,
-                       no_browser=no_browser
-                       )
+    return client.login(requested_scopes=SCOPES,
+                        refresh_tokens=refresh_tokens,
+                        no_local_server=no_local_server,
+                        no_browser=no_browser
+                        )
 
 
 def logout(tokens):
@@ -48,11 +52,4 @@ def logout(tokens):
         tokens = login()
         logout(tokens)
     """
-    if not isinstance(tokens, dict) or not all([isinstance(d, dict)
-                                                for d in tokens.values()]):
-        raise ValueError('Expected dict of dicts containing "access_token" '
-                         'and "refresh_token".')
-    client = NativeAppAuthClient(CLIENT_ID)
-    for tok_set in tokens.values():
-        client.oauth2_revoke_token(tok_set.get('access_token'))
-        client.oauth2_revoke_token(tok_set.get('refresh_token'))
+    client.revoke_token_set(tokens)

@@ -15,12 +15,9 @@ limitations under the License.
 """
 import os
 import logging
-import time
 from six.moves.configparser import ConfigParser
 
-from globus_sdk import serialize_token_groups, deserialize_token_groups
-
-from minid.exc import TokensExpired
+from native_login.token_storage import flat_pack, flat_unpack, check_expired
 
 log = logging.getLogger(__name__)
 
@@ -43,18 +40,18 @@ class Config(ConfigParser):
             config.write(configfile)
 
     def load_tokens(self):
-        tokens = {}
         try:
-            tokens = deserialize_token_groups(dict(self.items('tokens')))
-        except:
+            tokens = flat_unpack(dict(self.items('tokens')))
+            check_expired(tokens)
             return tokens
-
-        if any([self.check_tokens_expired(ts) for ts in tokens.values()]):
-            raise TokensExpired()
-        return tokens
+        except:
+            return {}
 
     def save_tokens(self, tokens):
-        for name, value in serialize_token_groups(tokens).items():
+        if 'tokens' in config.sections():
+            config.remove_section('tokens')
+            config.add_section('tokens')
+        for name, value in flat_pack(tokens).items():
             self.set('tokens', name, value)
         self.save()
 
@@ -68,9 +65,6 @@ class Config(ConfigParser):
             if required_section not in self.sections():
                 self.add_section(required_section)
 
-    @staticmethod
-    def check_tokens_expired(token_set):
-        return time.time() >= token_set["expires_at_seconds"]
 
 
 config = Config()
