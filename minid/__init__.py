@@ -1,8 +1,6 @@
 import logging
 
-from minid.auth import login, logout
-from minid.config import config
-from minid.api import MinidClient
+from minid import MinidClient
 
 
 def configure_logging(level=logging.INFO, logpath=None):
@@ -17,9 +15,5 @@ def configure_logging(level=logging.INFO, logpath=None):
 logging.getLogger('minid').addHandler(logging.NullHandler())
 
 __all__ = [
-
-
-    'config',
-
     'MinidClient',
 ]

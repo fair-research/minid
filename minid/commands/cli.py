@@ -20,9 +20,7 @@ from argparse import ArgumentParser
 
 from identifiers_client.identifiers_api import IdentifierClientError
 
-from minid.api import MinidClient
-from minid.config import config
-from minid.exc import TokensExpired
+import minid
 
 cli = ArgumentParser()
 subparsers = cli.add_subparsers(dest="subcommand")
@@ -32,14 +30,6 @@ cli.add_argument('--verbose', action="store_true", help="detailed output")
 cli.add_argument('--json', action="store_true", help="json output")
 
 log = logging.getLogger(__name__)
-
-
-def get_minid_client():
-    try:
-        return MinidClient(config.load_tokens().get('identifiers.globus.org'))
-    except TokensExpired:
-        log.debug('Tokens Expired, loading basic client instead.')
-        return MinidClient()
 
 
 def execute_command(cli, args, logger):
@@ -52,11 +42,9 @@ def execute_command(cli, args, logger):
 
     if subcommand is None:
         cli.print_help()
-        return
 
-    client = get_minid_client()
     try:
-        ret = args.func(client, args)
+        ret = args.func(minid.MinidClient(), args)
         # These subcommands all return minids
         if subcommand in ('register', 'update', 'check'):
             if args.json:

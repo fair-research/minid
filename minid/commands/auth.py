@@ -16,11 +16,9 @@ limitations under the License.
 from __future__ import print_function
 import logging
 
+from native_login import TokensExpired, LoadError
 from minid.commands.argparse_ext import subcommand, argument
 from minid.commands.cli import subparsers
-from minid.exc import TokensExpired
-import minid.auth
-from minid.config import config
 
 log = logging.getLogger(__name__)
 
@@ -54,7 +52,7 @@ log = logging.getLogger(__name__)
 def login(minid_client, args):
     try:
         if not args.force:
-            if config.load_tokens():
+            if minid_client.load_tokens():
                 log.info('You are already logged in.')
                 return
     except TokensExpired:
@@ -62,21 +60,18 @@ def login(minid_client, args):
     except Exception:
         log.debug('Loading tokens failed, proceeding to login...')
 
-    tokens = minid.auth.login(refresh_tokens=args.remember_me,
-                              no_local_server=args.no_local_server,
-                              no_browser=args.no_browser)
-    config.save_tokens(tokens)
+    minid_client.login(refresh_tokens=args.remember_me,
+                       no_local_server=args.no_local_server,
+                       no_browser=args.no_browser,
+                       force=args.force)
     log.info('You have been logged in.')
 
 
 @subcommand([], parent=subparsers, help='Logout to clear stored credentials')
 def logout(minid_client, args):
-    tokens = config.load_tokens()
-    if tokens:
-        minid.auth.logout(config.load_tokens())
-        config.remove_section('tokens')
-        config.add_section('tokens')
-        config.save()
+    try:
+        minid_client.load_tokens()
+        minid_client.logout()
         log.info('You have been logged out.')
-    else:
+    except LoadError:
         log.info('No user logged in, no logout necessary.')

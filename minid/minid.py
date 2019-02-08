@@ -17,60 +17,41 @@ import os
 import logging
 import hashlib
 
-from globus_sdk import NativeAppAuthClient
-from globus_sdk import AccessTokenAuthorizer, RefreshTokenAuthorizer
+from native_login import NativeClient, ConfigParserTokenStorage, LoadError
 
 from identifiers_client.identifiers_api import IdentifierClient
 from identifiers_client.config import config as ic_config
 
-from minid.auth import CLIENT_ID
-
 log = logging.getLogger(__name__)
 
 
-class MinidClient:
+class MinidClient(NativeClient):
+    CLIENT_ID = 'b61613f8-0da8-4be7-81aa-1c89f2c0fe9f'
+    SCOPES = ('https://auth.globus.org/scopes/'
+              'identifiers.globus.org/create_update',)
+    CONFIG = os.path.expanduser('~/.minid/minid-config.cfg')
 
     NAME = 'Minid Client'
     NAMESPACE = 'kHAAfCby2zdn'
     TEST_NAMESPACE = 'HHxPIZaVDh9u'
 
-    def __init__(self, token_set=None, on_refresh=None):
-        """
-        Create an identifier client. The client returned will depend on the
-         token set used:
-             token_set: None -- Only read access allowed
-             token_set: Dict containing 'access_token' -- Temporary Client
-             token_set: Dict containing 'access_token', 'refresh_token',
-                        'at_expires' -- Refresh Client
-         ** Parameters **
-          ``token_set`` (* dict or None *)
-          Tokens returned from an auth flow with the identifiers scope
-          ``on_refresh`` (* function *)
-          Function to call on refresh events when tokens expire. Useful for
-          saving new tokens. Example: lambda tokens: save_my_tokens(tokens)
-        """
-        self.identifiers_client = self._get_identifier_client(token_set,
-                                                              on_refresh)
+    def __init__(self, *args, **kwargs):
+        storage = ConfigParserTokenStorage(filename=self.CONFIG,
+                                           section='tokens')
+        kwargs.update({
+            'app_name': self.NAME,
+            'client_id': self.CLIENT_ID,
+            'default_scopes': self.SCOPES,
+            'token_storage': storage or kwargs.get('token_storage')
+        })
+        super(MinidClient, self).__init__(*args, **kwargs)
 
-    def _get_identifier_client(self, token_set, on_refresh):
-        authorizer = None
-        client = NativeAppAuthClient(CLIENT_ID,
-                                     app_name=self.NAME)
-
-        if token_set:
-            refresh_requires = {'refresh_token', 'access_token', 'at_expires'}
-            if refresh_requires.issubset(token_set):
-                if on_refresh is not None or not callable(on_refresh):
-                    raise ValueError('on_refresh is not a function!')
-                authorizer = RefreshTokenAuthorizer(
-                    token_set['refresh_token'],
-                    client,
-                    token_set['access_token'],
-                    token_set['at_expires'],
-                    on_refresh=on_refresh
-                    )
-            elif token_set.get('access_token'):
-                authorizer = AccessTokenAuthorizer(token_set['access_token'])
+    @property
+    def identifiers_client(self):
+        try:
+            authorizer = self.get_authorizers()['identifiers.globus.org']
+        except LoadError:
+            authorizer = None
         log.debug('Authorizer: {}'.format(authorizer))
         return IdentifierClient(
             "identifier",

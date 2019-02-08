@@ -55,20 +55,14 @@ Landing pages are accessible via the minid website: minid.bd2k.org/minid/landing
 Scripting
 ---------
 
-Auth for getting tokens is built into the client::
-
-    from minid import login, logout, config
-    # If you are working locally, you can reuse your tokens from the config
-    tokens = config.load_tokens()
-    # If you want to send a script to others, you can trigger a login flow
-    tokens = login()
-
-Pass the tokens to the MinidClient and it is ready to go::
+You can import the `MinidClient` for scripting::
 
     from minid import MinidClient
-    client = MinidClient(tokens['identifiers.globus.org'])
+    client = MinidClient()
+    client.login()
     client.register('foo.txt', title='My Foo File', locations=['http://example.com/foo.txt'])
-    logout(tokens)
+    client.logout()
+
 file manifest format
 --------------------
 Minids can only be assigned to a single file. In order to assign a minid to a collection of files we recommend using a `BDBag <https://github.com/ini-bdds/bdbag>`_ or the minid file manifest format. 
