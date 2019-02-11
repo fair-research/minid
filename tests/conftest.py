@@ -5,7 +5,7 @@ try:
 except ImportError:
     from mock import Mock
 
-from native_login import LoadError
+from fair_research_login import LoadError
 from minid import MinidClient
 
 from minid.commands import main  # noqa -- ensures commands are loaded

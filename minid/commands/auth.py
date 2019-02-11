@@ -16,7 +16,7 @@ limitations under the License.
 from __future__ import print_function
 import logging
 
-from native_login import TokensExpired, LoadError
+from fair_research_login import TokensExpired, LoadError
 from minid.commands.argparse_ext import subcommand, argument
 from minid.commands.cli import subparsers
 

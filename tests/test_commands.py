@@ -21,7 +21,8 @@ COMMANDS = [
         'expected_call_args': ([], {
             'refresh_tokens': False,
             'no_local_server': False,
-            'no_browser': False
+            'no_browser': False,
+            'force': False,
         })
     }),
     ({
@@ -30,7 +31,8 @@ COMMANDS = [
         'expected_call_args': ([], {
             'refresh_tokens': True,
             'no_local_server': False,
-            'no_browser': False
+            'no_browser': False,
+            'force': False,
         })
     }),
     ({
@@ -39,7 +41,8 @@ COMMANDS = [
         'expected_call_args': ([], {
             'refresh_tokens': False,
             'no_local_server': True,
-            'no_browser': False
+            'no_browser': False,
+            'force': False,
         })
     }),
     ({
@@ -48,7 +51,18 @@ COMMANDS = [
         'expected_call_args': ([], {
             'refresh_tokens': False,
             'no_local_server': False,
-            'no_browser': True
+            'no_browser': True,
+            'force': False,
+        })
+    }),
+    ({
+        'command': ['login', '--force'],
+        'mock': (minid.MinidClient, 'login'),
+        'expected_call_args': ([], {
+            'refresh_tokens': False,
+            'no_local_server': False,
+            'no_browser': False,
+            'force': True,
         })
     }),
     ({

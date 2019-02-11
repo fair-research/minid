@@ -3,8 +3,7 @@ from minid.minid import MinidClient
 
 
 def test_load_logged_out_authorizer(logged_out):
-    cli = MinidClient()
-    assert cli.identifiers_client.authorizer is None
+    assert MinidClient().identifiers_client.authorizer is None
 
 
 def test_register(mock_identifiers_client, mocked_checksum):

@@ -17,7 +17,9 @@ import os
 import logging
 import hashlib
 
-from native_login import NativeClient, ConfigParserTokenStorage, LoadError
+from fair_research_login import (NativeClient,
+                                 ConfigParserTokenStorage,
+                                 LoadError)
 
 from identifiers_client.identifiers_api import IdentifierClient
 from identifiers_client.config import config as ic_config
