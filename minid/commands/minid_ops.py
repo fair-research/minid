@@ -78,11 +78,15 @@ def update(minid_client, args):
         argument(
             "entity",
             help='A Minid or local file'),
+        argument(
+            "--function",
+            required=False,
+            help='function used to generate the checksum, if provided',
+            default='sha256',
+        )
     ],
     parent=subparsers,
     help='Lookup a minid or check if a given file has been registered',
 )
 def check(minid_client, args):
-    if not args.entity.startswith('ark:/'):
-        log.warning('File lookups are not yet supported.')
-    return minid_client.check(args.entity)
+    return minid_client.check(args.entity, args.function)

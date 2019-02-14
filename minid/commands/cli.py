@@ -50,7 +50,12 @@ def execute_command(cli, args, logger):
             if args.json:
                 print(json.dumps(ret.data, indent=2))
             else:
-                pretty_print_minid(ret.data)
+                if ret.data.get('identifiers'):
+                    for m in ret.data.get('identifiers'):
+                        pretty_print_minid(m)
+                        print_separator()
+                else:
+                    pretty_print_minid(ret.data)
     except IdentifierClientError as ice:
         if not args.json and ice.http_status == 401:
             log.error('Authentication required, please login and try '
@@ -67,6 +72,10 @@ def execute_command(cli, args, logger):
                   'and we will fix this as soon as we can.')
         if args.verbose:
             traceback.print_exc()
+
+
+def print_separator():
+    print('-' * 50)
 
 
 def pretty_print_minid(command_json):

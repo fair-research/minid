@@ -109,13 +109,34 @@ class MinidClient(NativeClient):
                                                          metadata=metadata,
                                                          location=locations)
 
-    def check(self, minid):
+    def check(self, entity, algorithm='sha256'):
         """
         ** Parameters **
-          ``string`` (*string*)
-          The Minid to check
+          ``entity`` (*string*)
+          entity can either be a filename or a minid. If the entity stars
+          with 'ark:/' it will be treated as a minid. Otherwise, it will
+          be treated as a file.
         """
-        return self.identifiers_client.get_identifier(minid)
+        if entity.startswith('ark:/'):
+            return self.identifiers_client.get_identifier(entity)
+        else:
+            alg = self.get_algorithm(algorithm)
+            checksum = self.compute_checksum(entity, alg)
+            return self.identifiers_client.get_identifier_by_checksum(checksum)
+
+    @staticmethod
+    def get_algorithm(algorithm_name):
+        """
+        Get an algorithm from hashlib by str
+        :param algorithm_name: Name of the algorithm. Example: 'sha256'
+        :return: The hashlib algorithm, or a MinidException if it does not
+        exist
+        """
+        alg = getattr(hashlib, algorithm_name, None)
+        if alg is None:
+            raise MinidException('Algorithm {} is not available.'
+                                 .format(algorithm_name))
+        return alg()
 
     @staticmethod
     def compute_checksum(file_path, algorithm=None, block_size=65536):

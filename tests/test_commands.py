@@ -148,12 +148,12 @@ COMMANDS = [
     ({
         'command': ['check', 'ark:/99999/abcdefg'],
         'mock': (minid.MinidClient, 'check'),
-        'expected_call_args': (['ark:/99999/abcdefg'], {})
+        'expected_call_args': (['ark:/99999/abcdefg', 'sha256'], {})
     }),
     ({
         'command': ['check', 'foobar.txt'],
         'mock': (minid.MinidClient, 'check'),
-        'expected_call_args': (['foobar.txt'], {})
+        'expected_call_args': (['foobar.txt', 'sha256'], {})
     }),
 ]
 
