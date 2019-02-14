@@ -20,6 +20,8 @@ from argparse import ArgumentParser
 
 from identifiers_client.identifiers_api import IdentifierClientError
 
+from minid.minid import MinidException
+
 import minid
 
 cli = ArgumentParser()
@@ -67,6 +69,11 @@ def execute_command(cli, args, logger):
             if ice.raw_json and ice.raw_json.get('message'):
                 error = ice.raw_json['message']
             log.error(error)
+    except MinidException as me:
+        if args.verbose:
+            log.exception(me)
+        else:
+            log.error(me)
     except Exception as e:
         log.error('An unexpected error occurred, please file a bug report '
                   'and we will fix this as soon as we can.')

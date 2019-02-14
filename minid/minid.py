@@ -24,7 +24,12 @@ from fair_research_login import (NativeClient,
 from identifiers_client.identifiers_api import IdentifierClient
 from identifiers_client.config import config as ic_config
 
+
 log = logging.getLogger(__name__)
+
+
+class MinidException(Exception):
+    pass
 
 
 class MinidClient(NativeClient):
@@ -146,10 +151,18 @@ class MinidClient(NativeClient):
 
         log.debug('Computing checksum for {} using {}'.format(file_path,
                                                               algorithm))
-        with open(os.path.abspath(file_path), 'rb') as open_file:
-            buf = open_file.read(block_size)
-            while len(buf) > 0:
-                algorithm.update(buf)
+        if not os.path.exists(file_path):
+            raise MinidException('File not Found: {}'.format(file_path))
+
+        try:
+            with open(os.path.abspath(file_path), 'rb') as open_file:
                 buf = open_file.read(block_size)
-        open_file.close()
-        return algorithm.hexdigest()
+                while len(buf) > 0:
+                    algorithm.update(buf)
+                    buf = open_file.read(block_size)
+            open_file.close()
+            return algorithm.hexdigest()
+        except Exception:
+            raise MinidException('Unable to checksum file {}'.format(
+                file_path)
+            )
