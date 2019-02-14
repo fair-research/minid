@@ -52,7 +52,9 @@ def execute_command(cli, args, logger):
             if args.json:
                 print(json.dumps(ret.data, indent=2))
             else:
-                if ret.data.get('identifiers'):
+                if ret.data.get('identifiers') == []:
+                    log.info('No minids found for file.')
+                elif ret.data.get('identifiers'):
                     for m in ret.data.get('identifiers'):
                         pretty_print_minid(m)
                         print_separator()
@@ -70,8 +72,8 @@ def execute_command(cli, args, logger):
                 error = ice.raw_json['message']
             log.error(error)
     except MinidException as me:
-        if args.verbose:
-            log.exception(me)
+        if args.json:
+            print(json.dumps({'error': str(me)}))
         else:
             log.error(me)
     except Exception as e:

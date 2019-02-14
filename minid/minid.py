@@ -127,6 +127,7 @@ class MinidClient(NativeClient):
         else:
             alg = self.get_algorithm(algorithm)
             checksum = self.compute_checksum(entity, alg)
+            log.debug('File lookup using ({}) {}'.format(algorithm, checksum))
             return self.identifiers_client.get_identifier_by_checksum(checksum)
 
     @staticmethod
