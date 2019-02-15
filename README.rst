@@ -32,11 +32,11 @@ The CLI supports the following simple operations (Note: the `--test` flag create
     
 * Retrieve metadata about a file::
 
-    $ minid <file_name>
+    $ minid check <file_name>
     
 * Retrieve metadata about an identifier::
 
-    $ minid <identifier>
+    $ minid check <identifier>
 
 * Update metadata about an identifier::
 
