@@ -1,6 +1,6 @@
 import logging
 
-from minid import MinidClient
+from minid.minid import MinidClient
 
 
 def configure_logging(level=logging.INFO, logpath=None):
