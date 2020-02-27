@@ -33,14 +33,15 @@ class MinidException(Exception):
 
 
 class MinidClient(NativeClient):
-    CLIENT_ID = 'b61613f8-0da8-4be7-81aa-1c89f2c0fe9f'
-    SCOPES = ('https://auth.globus.org/scopes/'
-              'identifiers.globus.org/create_update',)
+    CLIENT_ID = 'fa63f71e-4b8c-4032-b78e-0fc6214efd0b'
+    SERVICE_URL = 'https://identifiers.fair-research.org/'
+    SCOPES = ('https://auth.globus.org/scopes/identifiers.fair-research.org/'
+              'writer')
     CONFIG = os.path.expanduser('~/.minid/minid-config.cfg')
 
     NAME = 'Minid Client'
-    NAMESPACE = 'kHAAfCby2zdn'
-    TEST_NAMESPACE = 'HHxPIZaVDh9u'
+    NAMESPACE = 'minid'
+    TEST_NAMESPACE = 'minid-test'
 
     def __init__(self, *args, **kwargs):
         storage = ConfigParserTokenStorage(filename=self.CONFIG,
@@ -56,13 +57,12 @@ class MinidClient(NativeClient):
     @property
     def identifiers_client(self):
         try:
-            authorizer = self.get_authorizers()['identifiers.globus.org']
+            authorizer = self.get_authorizers_by_scope()[self.SCOPES]
         except LoadError:
             authorizer = None
         log.debug('Authorizer: {}'.format(authorizer))
         return IdentifierClient(
-            "identifier",
-            base_url=ic_config.get('client', 'service_url'),
+            base_url=self.SERVICE_URL,
             app_name=self.NAME,
             authorizer=authorizer
         )

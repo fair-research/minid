@@ -28,15 +28,10 @@ setup(
     author='Kyle Chard',
     author_email='chard@uchicago.edu',
     packages=find_packages(),
-    install_requires=[
-        'globus-sdk',
-        'globus-identifiers-client'
-    ],
+    install_requires=install_requires,
     dependency_links=[
-        'git+https://github.com/nickolausds/globus-identifiers-client'
-        '@argument-field-changes#egg=globus-identifiers-client',
-        'git+https://github.com/NickolausDS/globus-sdk-python'
-        '@feature/native_auth#egg=globus-sdk-python'
+        'git+https://github.com/fair-research/globus-identifiers-client'
+        '#egg=globus-identifiers-client',
     ],
     license='Apache 2.0',
     entry_points={
