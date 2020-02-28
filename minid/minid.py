@@ -144,8 +144,8 @@ class MinidClient(object):
         locations = locations or []
         namespace = self.TEST_NAMESPACE if test is True else self.NAMESPACE
         metadata = {
-            '_profile': 'erc',
-            'erc.what': title or filename
+            'title': title or filename,
+            'byteCount': os.path.getsize(filename)
         }
         checksums = [{
             'function': 'sha256',
@@ -175,7 +175,7 @@ class MinidClient(object):
                                 'authorizer.')
         locations, metadata = locations or [], metadata or {}
         if title:
-            metadata['erc.what'] = title
+            metadata['title'] = title
         return self.identifiers_client.update_identifier(minid,
                                                          metadata=metadata,
                                                          location=locations)
