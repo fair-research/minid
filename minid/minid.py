@@ -17,24 +17,15 @@ import os
 import logging
 import hashlib
 
-from fair_research_login import (NativeClient,
-                                 ConfigParserTokenStorage,
-                                 LoadError)
-
+import fair_research_login
 from identifiers_client.identifiers_api import IdentifierClient
-from identifiers_client.config import config as ic_config
-
+from minid.exc import MinidException, LoginRequired
 
 log = logging.getLogger(__name__)
 
 
-class MinidException(Exception):
-    pass
-
-
-class MinidClient(NativeClient):
+class MinidClient(object):
     CLIENT_ID = 'fa63f71e-4b8c-4032-b78e-0fc6214efd0b'
-    SERVICE_URL = 'https://identifiers.fair-research.org/'
     SCOPES = ('https://auth.globus.org/scopes/identifiers.fair-research.org/'
               'writer')
     CONFIG = os.path.expanduser('~/.minid/minid-config.cfg')
@@ -42,33 +33,99 @@ class MinidClient(NativeClient):
     NAME = 'Minid Client'
     NAMESPACE = 'minid'
     TEST_NAMESPACE = 'minid-test'
+    MINID_PREFIX = 'hdl:'
 
-    def __init__(self, *args, **kwargs):
-        storage = ConfigParserTokenStorage(filename=self.CONFIG,
-                                           section='tokens')
-        kwargs.update({
-            'app_name': self.NAME,
-            'client_id': self.CLIENT_ID,
-            'default_scopes': self.SCOPES,
-            'token_storage': storage or kwargs.get('token_storage')
-        })
-        super(MinidClient, self).__init__(*args, **kwargs)
+    def __init__(self, authorizer=None, app_name=None, native_client=None,
+                 config=None,
+                 base_url='https://identifiers.fair-research.org/'):
+        self.app_name = app_name or self.NAME
+        self.config = config or self.CONFIG
+        self.base_url = base_url
+        self._authorizer = authorizer
+
+        if native_client is None:
+            storage = fair_research_login.ConfigParserTokenStorage(
+                filename=self.config, section='tokens')
+            self.native_client = fair_research_login.NativeClient(
+                app_name=self.app_name, client_id=self.CLIENT_ID,
+                default_scopes=self.SCOPES, token_storage=storage
+            )
+
+    def login(self, refresh_tokens=False, no_local_server=True,
+              no_browser=True, force=False):
+        """
+        Authenticate with Globus for tokens to talk to the remote Identifiers
+        Server. Login is only needed for some operations, reading identifiers
+        can be done anonymously.
+        **Parameters**
+        ``no_local_server`` (*bool*)
+          Disable spinning up a local server to automatically copy-paste the
+          auth code. THIS IS REQUIRED if you are on a remote server, as this
+          package isn't able to determine the domain of a remote service. When
+          used locally with no_local_server=False, the domain is localhost with
+          a randomly chosen open port number. Typically not used when calling
+          directly into a client.
+        ``no_browser`` (*string*)
+          Do not automatically open the browser for the Globus Auth URL.
+          Display the URL instead and let the user navigate to that location.
+          This usually isn't desired if calling from a jupyter notebook or from
+          a remote server.
+        ``refresh_tokens`` (*bool*)
+          Ask for Globus Refresh Tokens to extend login time.
+        ``force`` (*bool*)
+          Force a login flow, even if loaded tokens are valid.
+        """
+        self.native_client.login(refresh_tokens=refresh_tokens,
+                                 no_local_server=no_local_server,
+                                 no_browser=no_browser,
+                                 force=force)
+
+    def logout(self):
+        """
+        Revoke local tokens and clear the token cache.
+        """
+        try:
+            self.native_client.load_tokens()
+            self.native_client.logout()
+            return True
+        except fair_research_login.LoadError:
+            return False
+
+    @property
+    def authorizer(self):
+        if self._authorizer is not None:
+            return self._authorizer
+        try:
+            return self.native_client.get_authorizers_by_scope()[self.SCOPES]
+        except fair_research_login.LoadError:
+            return None
+
+    @authorizer.setter
+    def authorizer(self, value):
+        self._authorizer = value
+
+    def is_logged_in(self):
+        return bool(self.authorizer)
 
     @property
     def identifiers_client(self):
-        try:
-            authorizer = self.get_authorizers_by_scope()[self.SCOPES]
-        except LoadError:
-            authorizer = None
-        log.debug('Authorizer: {}'.format(authorizer))
+        log.debug('Authorizer: {}'.format(self.authorizer))
         return IdentifierClient(
-            base_url=self.SERVICE_URL,
-            app_name=self.NAME,
-            authorizer=authorizer
+            base_url=self.base_url,
+            app_name=self.app_name,
+            authorizer=self.authorizer
         )
 
-    def register(self, filename, title='', locations=[], test=False):
+    def is_minid(self, entity):
+        """Returns True if entity is a minid, False otherwise"""
+        return isinstance(entity, str) and entity.startswith(self.MINID_PREFIX)
+
+    def register(self, filename, title='', locations=None, test=False):
         """
+        Register a file and produce an identifier. The file is automatically
+        checksummed using sha256, and the checksum is sent to the identifiers
+        service along with any other metadata. The hash can later be looked up
+        using the ``check()`` command.
         ** Parameters **
           ``filename`` (*string*)
           The filename used to create a minid
@@ -78,7 +135,13 @@ class MinidClient(NativeClient):
           Network accessible locations for the given file
           ``test`` (* boolean *)
           Create the minid in a non-permanent test namespace
+        ** Returns **
+
         """
+        if not self.is_logged_in():
+            raise LoginRequired('The Minid Client did not have a valid '
+                                'authorizer.')
+        locations = locations or []
         namespace = self.TEST_NAMESPACE if test is True else self.NAMESPACE
         metadata = {
             '_profile': 'erc',
@@ -95,7 +158,7 @@ class MinidClient(NativeClient):
                                                          checksums=checksums
                                                          )
 
-    def update(self, minid, title='', locations=[]):
+    def update(self, minid, title='', locations=None, metadata=None):
         """
         ** Parameters **
           ``minid`` (*string*)
@@ -107,7 +170,10 @@ class MinidClient(NativeClient):
           ``test`` (* boolean *)
           Create the minid in a non-permanent test namespace
         """
-        metadata = {}
+        if not self.is_logged_in():
+            raise LoginRequired('The Minid Client did not have a valid '
+                                'authorizer.')
+        locations, metadata = locations or [], metadata or {}
         if title:
             metadata['erc.what'] = title
         return self.identifiers_client.update_identifier(minid,

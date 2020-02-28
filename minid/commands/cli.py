@@ -20,7 +20,7 @@ from argparse import ArgumentParser
 
 from identifiers_client.identifiers_api import IdentifierClientError
 
-from minid.minid import MinidException
+from minid.exc import MinidException, LoginRequired
 
 import minid
 
@@ -60,11 +60,14 @@ def execute_command(cli, args, logger):
                         print_separator()
                 else:
                     pretty_print_minid(ret.data)
+    except LoginRequired:
+        message = 'Authentication required, please login and try again.'
+        if args.json:
+            print(json.dumps({'error': str(message)}))
+        else:
+            log.error(message)
     except IdentifierClientError as ice:
-        if not args.json and ice.http_status == 401:
-            log.error('Authentication required, please login and try '
-                      'again.')
-        elif args.json:
+        if args.json:
             print(json.dumps(ice.raw_json, indent=2))
         else:
             error = str(ice)
@@ -76,7 +79,7 @@ def execute_command(cli, args, logger):
             print(json.dumps({'error': str(me)}))
         else:
             log.error(me)
-    except Exception as e:
+    except Exception:
         log.error('An unexpected error occurred, please file a bug report '
                   'and we will fix this as soon as we can.')
         if args.verbose:

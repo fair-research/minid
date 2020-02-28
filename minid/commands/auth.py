@@ -16,7 +16,6 @@ limitations under the License.
 from __future__ import print_function
 import logging
 
-from fair_research_login import TokensExpired, LoadError
 from minid.commands.argparse_ext import subcommand, argument
 from minid.commands.cli import subparsers
 
@@ -52,11 +51,9 @@ log = logging.getLogger(__name__)
 def login(minid_client, args):
     try:
         if not args.force:
-            if minid_client.load_tokens():
+            if minid_client.is_logged_in():
                 log.info('You are already logged in.')
                 return
-    except TokensExpired:
-        log.debug('Tokens expired, proceeding to login...')
     except Exception:
         log.debug('Loading tokens failed, proceeding to login...')
 
@@ -69,9 +66,8 @@ def login(minid_client, args):
 
 @subcommand([], parent=subparsers, help='Logout to clear stored credentials')
 def logout(minid_client, args):
-    try:
-        minid_client.load_tokens()
-        minid_client.logout()
+    has_logged_out = minid_client.logout()
+    if has_logged_out:
         log.info('You have been logged out.')
-    except LoadError:
+    else:
         log.info('No user logged in, no logout necessary.')
