@@ -2,10 +2,7 @@ include *.rst
 include requirements.txt
 include LICENSE
 
-graft minid_client
-
-# Currently this is only for reference on Github
-prune config
+graft minid
 
 # Patterns to exclude from any directory
 global-exclude *~

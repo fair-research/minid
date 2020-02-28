@@ -1,12 +1,13 @@
 from setuptools import setup, find_packages
-from os import path
+import os
 
-import minid_client
-
-here = path.abspath(path.dirname(__file__))
+version = {}
+here = os.path.abspath(os.path.dirname(__file__))
+with open(os.path.join(here, 'minid', 'version.py')) as f:
+    exec(f.read(), {}, version)
 
 # Get the long description from the README file
-with open(path.join(here, 'README.rst')) as f:
+with open(os.path.join(here, 'README.rst')) as f:
     long_description = f.read()
 
 install_requires = []
@@ -20,7 +21,7 @@ with open('requirements.txt') as reqs:
 
 setup(
     name='minid',
-    version=minid_client.__VERSION__,
+    version=version['__VERSION__'],
     description='BD2K Minimum Viable Identifier',
     long_description=long_description,
     url='http://minid.bd2k.org/',
@@ -28,10 +29,14 @@ setup(
     author_email='chard@uchicago.edu',
     packages=find_packages(),
     install_requires=install_requires,
+    dependency_links=[
+        'git+https://github.com/fair-research/globus-identifiers-client'
+        '#egg=globus-identifiers-client',
+    ],
     license='Apache 2.0',
     entry_points={
         'console_scripts': [
-            'minid = minid_client.minid:main'
+            'minid = minid.commands.main:main',
         ]
     }
 )
