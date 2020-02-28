@@ -1,59 +1,20 @@
 import logging
 import pytest
 
-try:
-    from unittest.mock import Mock
-except ImportError:
-    from mock import Mock
-
+from unittest.mock import Mock
 from identifiers_client.identifiers_api import IdentifierClientError
 
 from minid.commands import cli
 import minid
 
-COMMANDS = [
+LOGGED_IN_COMMANDS = [
     ({
         # The command to run in the cli
         'command': ['login'],
         # The function to mock and test
-        'mock': (minid.MinidClient, 'login'),
+        'mock': None,
         # Assert that the mocked function above was called with these args
-        'expected_call_args': ([], {
-            'refresh_tokens': False,
-            'no_local_server': False,
-            'no_browser': False,
-            'force': False,
-        })
-    }),
-    ({
-        'command': ['login', '--remember-me'],
-        'mock': (minid.MinidClient, 'login'),
-        'expected_call_args': ([], {
-            'refresh_tokens': True,
-            'no_local_server': False,
-            'no_browser': False,
-            'force': False,
-        })
-    }),
-    ({
-        'command': ['login', '--no-local-server'],
-        'mock': (minid.MinidClient, 'login'),
-        'expected_call_args': ([], {
-            'refresh_tokens': False,
-            'no_local_server': True,
-            'no_browser': False,
-            'force': False,
-        })
-    }),
-    ({
-        'command': ['login', '--no-browser'],
-        'mock': (minid.MinidClient, 'login'),
-        'expected_call_args': ([], {
-            'refresh_tokens': False,
-            'no_local_server': False,
-            'no_browser': True,
-            'force': False,
-        })
+        'expected_call_args': ([], {})
     }),
     ({
         'command': ['login', '--force'],
@@ -67,7 +28,7 @@ COMMANDS = [
     }),
     ({
         'command': ['logout'],
-        'mock': (minid.MinidClient, 'logout'),
+        'mock': None,
         'expected_call_args': ([], {})
     }),
     ({
@@ -157,13 +118,56 @@ COMMANDS = [
     }),
 ]
 
-
-@pytest.fixture
-def no_load_tokens(monkeypatch):
-    load_mock = Mock()
-    load_mock.return_value = {}
-    monkeypatch.setattr(minid.minid.MinidClient, 'load_tokens', load_mock)
-    return load_mock
+LOGGED_OUT_COMMANDS = [
+    ({
+        # The command to run in the cli
+        'command': ['login'],
+        # The function to mock and test
+        'mock': (minid.MinidClient, 'login'),
+        # Assert that the mocked function above was called with these args
+        'expected_call_args': ([], {
+            'refresh_tokens': False,
+            'no_local_server': False,
+            'no_browser': False,
+            'force': False,
+        })
+    }),
+    ({
+        'command': ['login', '--remember-me'],
+        'mock': (minid.MinidClient, 'login'),
+        'expected_call_args': ([], {
+            'refresh_tokens': True,
+            'no_local_server': False,
+            'no_browser': False,
+            'force': False,
+        })
+    }),
+    ({
+        'command': ['login', '--no-local-server'],
+        'mock': (minid.MinidClient, 'login'),
+        'expected_call_args': ([], {
+            'refresh_tokens': False,
+            'no_local_server': True,
+            'no_browser': False,
+            'force': False,
+        })
+    }),
+    ({
+        'command': ['login', '--no-browser'],
+        'mock': (minid.MinidClient, 'login'),
+        'expected_call_args': ([], {
+            'refresh_tokens': False,
+            'no_local_server': False,
+            'no_browser': True,
+            'force': False,
+        })
+    }),
+    ({
+        'command': ['logout'],
+        'mock': None,
+        'expected_call_args': ([], {})
+    }),
+]
 
 
 @pytest.fixture
@@ -176,11 +180,6 @@ def mock_ic_error(monkeypatch):
     return IdentifierClientError(mock_request)
 
 
-@pytest.fixture(params=COMMANDS)
-def cli_command(request, no_load_tokens):
-    return request.param
-
-
 def _mock_function(monkeypatch, func_components):
     if not func_components:
         return None
@@ -190,7 +189,17 @@ def _mock_function(monkeypatch, func_components):
     return func_mock
 
 
-def test_command(monkeypatch, cli_command):
+@pytest.fixture(params=LOGGED_IN_COMMANDS)
+def cli_command_logged_in(request, logged_in):
+    return request.param
+
+
+@pytest.fixture(params=LOGGED_OUT_COMMANDS)
+def cli_command_logged_out(request, logged_out):
+    return request.param
+
+
+def execute_and_test_command(monkeypatch, cli_command):
     mocked_function = _mock_function(monkeypatch, cli_command['mock'])
 
     log = logging.getLogger(__name__)
@@ -202,7 +211,15 @@ def test_command(monkeypatch, cli_command):
         mocked_function.assert_called_with(*f_args, **f_kwargs)
 
 
-def test_command_requires_login(monkeypatch, no_load_tokens, mock_ic_error):
+def test_logged_in_commands(monkeypatch, cli_command_logged_in):
+    execute_and_test_command(monkeypatch, cli_command_logged_in)
+
+
+def test_logged_out_commands(monkeypatch, cli_command_logged_out):
+    execute_and_test_command(monkeypatch, cli_command_logged_out)
+
+
+def test_command_requires_login(monkeypatch, logged_out, mock_ic_error):
     register_mock = Mock()
     register_mock.side_effect = mock_ic_error
     monkeypatch.setattr(minid.minid.MinidClient, 'register', register_mock)
@@ -214,7 +231,7 @@ def test_command_requires_login(monkeypatch, no_load_tokens, mock_ic_error):
     assert register_mock.called
 
 
-def test_command_requires_login_json_output(monkeypatch, no_load_tokens,
+def test_command_requires_login_json_output(monkeypatch, logged_in,
                                             mock_ic_error):
     register_mock = Mock()
     register_mock.side_effect = mock_ic_error
@@ -227,7 +244,21 @@ def test_command_requires_login_json_output(monkeypatch, no_load_tokens,
     assert register_mock.called
 
 
-def test_command_general_identifiers_error(monkeypatch, no_load_tokens,
+def test_command_print_help():
+    with pytest.raises(SystemExit):
+        args = cli.cli.parse_args(['register'])
+        cli.execute_command(cli, args, Mock())
+
+
+def test_cli_errors(logged_out):
+    # Raises Logout Error
+    args = cli.cli.parse_args(['register', '--test', 'foo.txt'])
+    cli.execute_command(cli, args, Mock())
+    args = cli.cli.parse_args(['--json', 'register', '--test', 'foo.txt'])
+    cli.execute_command(cli, args, Mock())
+
+
+def test_command_general_identifiers_error(monkeypatch, logged_in,
                                            mock_ic_error):
     mock_ic_error.http_status = 500
     register_mock = Mock()

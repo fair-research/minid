@@ -5,17 +5,29 @@ try:
 except ImportError:
     from mock import Mock
 
-from fair_research_login import LoadError
+import fair_research_login
 from minid import MinidClient
 
 from minid.commands import main  # noqa -- ensures commands are loaded
 
 
 @pytest.fixture
+def logged_in(monkeypatch):
+    load_mock = Mock()
+    load_mock.return_value = {}
+    monkeypatch.setattr(MinidClient, 'is_logged_in', Mock(return_value=True))
+    monkeypatch.setattr(fair_research_login.NativeClient, 'load_tokens',
+                        load_mock)
+    return load_mock
+
+
+@pytest.fixture
 def logged_out(monkeypatch):
     mock_load = Mock()
-    mock_load.side_effect = LoadError()
-    monkeypatch.setattr(MinidClient, 'load_tokens', mock_load)
+    mock_load.side_effect = fair_research_login.LoadError()
+    monkeypatch.setattr(fair_research_login.NativeClient, 'load_tokens',
+                        mock_load)
+    monkeypatch.setattr(MinidClient, 'is_logged_in', Mock(return_value=False))
     return mock_load
 
 
