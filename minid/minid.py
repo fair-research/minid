@@ -145,7 +145,7 @@ class MinidClient(object):
         namespace = self.TEST_NAMESPACE if test is True else self.NAMESPACE
         metadata = {
             'title': title or filename,
-            'byteCount': os.path.getsize(filename)
+            'length': os.path.getsize(filename)
         }
         checksums = [{
             'function': 'sha256',

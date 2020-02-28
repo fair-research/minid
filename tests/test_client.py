@@ -24,7 +24,7 @@ def test_register(mock_identifiers_client, mocked_checksum, logged_in):
         'checksums': [{'function': 'sha256', 'value': 'mock_checksum'}],
         'metadata': {
             'title': 'foo.txt',
-            'byteCount': 21
+            'length': 21
         },
         'location': [],
         'namespace': MinidClient.NAMESPACE,
