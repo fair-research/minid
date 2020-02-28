@@ -44,6 +44,7 @@ def execute_command(cli, args, logger):
 
     if subcommand is None:
         cli.print_help()
+        return
 
     try:
         ret = args.func(minid.MinidClient(), args)
