@@ -188,7 +188,7 @@ class MinidClient(object):
           with 'ark:/' it will be treated as a minid. Otherwise, it will
           be treated as a file.
         """
-        if entity.startswith('ark:/'):
+        if self.is_minid(entity):
             return self.identifiers_client.get_identifier(entity)
         else:
             alg = self.get_algorithm(algorithm)
