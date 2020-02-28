@@ -23,8 +23,8 @@ def test_register(mock_identifiers_client, mocked_checksum, logged_in):
     expected = {
         'checksums': [{'function': 'sha256', 'value': 'mock_checksum'}],
         'metadata': {
-            '_profile': 'erc',
-            'erc.what': 'foo.txt'
+            'title': 'foo.txt',
+            'byteCount': 21
         },
         'location': [],
         'namespace': MinidClient.NAMESPACE,
@@ -39,7 +39,7 @@ def test_update(mock_identifiers_client, mocked_checksum, logged_in):
                locations=['http://example.com'])
     mock_identifiers_client.update_identifier.assert_called_with(
         'hdl:20.500.12633/mock-hdl',
-        metadata={'erc.what': 'foo.txt'},
+        metadata={'title': 'foo.txt'},
         location=['http://example.com']
     )
 
