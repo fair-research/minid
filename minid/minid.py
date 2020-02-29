@@ -15,10 +15,13 @@ limitations under the License.
 """
 import os
 import logging
+import json
+from collections import OrderedDict
 import hashlib
 
 import fair_research_login
 from identifiers_client.identifiers_api import IdentifierClient
+from identifiers_client.main import SUPPORTED_CHECKSUMS
 from minid.exc import MinidException, LoginRequired
 
 log = logging.getLogger(__name__)
@@ -120,7 +123,7 @@ class MinidClient(object):
         """Returns True if entity is a minid, False otherwise"""
         return isinstance(entity, str) and entity.startswith(self.MINID_PREFIX)
 
-    def register(self, filename, title='', locations=None, test=False):
+    def register_file(self, filename, title='', locations=None, test=False):
         """
         Register a file and produce an identifier. The file is automatically
         checksummed using sha256, and the checksum is sent to the identifiers
@@ -138,11 +141,6 @@ class MinidClient(object):
         ** Returns **
 
         """
-        if not self.is_logged_in():
-            raise LoginRequired('The Minid Client did not have a valid '
-                                'authorizer.')
-        locations = locations or []
-        namespace = self.TEST_NAMESPACE if test is True else self.NAMESPACE
         metadata = {
             '_profile': 'erc',
             'erc.what': title or filename
@@ -151,6 +149,25 @@ class MinidClient(object):
             'function': 'sha256',
             'value': self.compute_checksum(filename, hashlib.sha256())
         }]
+        return self.register(checksums, title=title, locations=locations,
+                             test=test, metadata=metadata)
+
+    def register(self, checksums, title='', locations=None, test=False,
+                 metadata=None):
+        """Register pre-prepared data, where the checksum already exists for
+        a given file."""
+        if not self.is_logged_in():
+            raise LoginRequired('The Minid Client did not have a valid '
+                                'authorizer.')
+        unsupported = [c for c in checksums
+                       if c['function'] not in SUPPORTED_CHECKSUMS]
+        if unsupported:
+            log.warning('The following checksums for {} are unsupported and '
+                        'will not be included: {}'.format(title,
+                                                          unsupported))
+        metadata = metadata or {}
+        metadata['title'] = title
+        namespace = self.TEST_NAMESPACE if test is True else self.NAMESPACE
         return self.identifiers_client.create_identifier(namespace=namespace,
                                                          visible_to=['public'],
                                                          metadata=metadata,
@@ -195,6 +212,93 @@ class MinidClient(object):
             checksum = self.compute_checksum(entity, alg)
             log.debug('File lookup using ({}) {}'.format(algorithm, checksum))
             return self.identifiers_client.get_identifier_by_checksum(checksum)
+
+    def get_most_recent_active_entity(self, entities):
+        """If there are multiple entities, return the entity with the latest
+        timestamp."""
+        if len(entities.data['identifiers']) > 0:
+            return entities.data['identifiers'][-1]
+        return None
+        # HACK! Currently the date created is not returned, so we can't get the
+        # time for each identifier. Simply return the last one in the list the
+        # server generates.
+        # active_sorted = sorted(entities,
+        #                        key=lambda x: datetime.datetime.strptime(
+        #                            x["created"], '%Y-%m-%dT%H:%M:%S.%f'),
+        #                        reverse=True)
+        # if active_sorted:
+        #     return active_sorted[0]
+
+    def _is_stream(self, file_handle):
+        """
+        Returns true if the given file handle is a stream of remote file
+        manifests, false if it is a file.
+        """
+        line = file_handle.readline().lstrip()
+        file_handle.seek(0)
+        is_json_stream = False
+        if line.startswith('{'):
+            is_json_stream = True
+        return is_json_stream
+
+    def read_manifest_entries(self, manifest_filename):
+        """
+        Read a given filename and yield each entity in the manifest until
+        there are no more manifests. Works if the manifest_filename is a stream
+        or a regular file.
+        """
+        with open(manifest_filename, 'r') as manifest:
+            is_stream = self._is_stream(manifest)
+            log.info('Parsing {} from filename {}'
+                     ''.format('stream' if is_stream else 'file',
+                               manifest_filename)
+                     )
+
+            # Fetch 'entities' to iterate upon.
+            if not is_stream:
+                entities = json.load(manifest, object_pairs_hook=OrderedDict)
+            else:
+                entities = manifest
+
+            # Iterate over the entities and yield each one until we run out.
+            for entity in entities:
+                if is_stream:
+                    yield json.loads(entity, object_pairs_hook=OrderedDict)
+                else:
+                    yield entity
+
+    def get_or_register_manifest_entry(self, manifest_entity, test):
+        """
+        If the entity within the manifest has already been registered, fetch
+        the remote entity. If None exists, create a new Minid for the data
+        within the manifest entity. Return the 'minid' for the URL.
+        """
+        log.debug('Checking entry {}'.format(manifest_entity['filename']))
+        existing_entities = self.identifiers_client.get_identifier_by_checksum(
+            manifest_entity['sha256']
+        )
+        entity = self.get_most_recent_active_entity(existing_entities)
+        if not entity:
+            checksums = [{'function': f, 'value': manifest_entity.get(f)}
+                         for f in SUPPORTED_CHECKSUMS
+                         if f in manifest_entity.keys()]
+            locations = (manifest_entity['url']
+                         if isinstance(manifest_entity['url'], list)
+                         else [manifest_entity['url']]
+                         )
+            entity = self.register(checksums, test=test, locations=locations,
+                                   title=manifest_entity['filename'])
+        else:
+            log.warning('Entity already registered, using {} for {}.'
+                        ''.format(entity['identifier'],
+                                  manifest_entity['filename']))
+        new_manifest = manifest_entity.copy()
+        new_manifest['url'] = entity['identifier']
+        return new_manifest
+
+    def batch_register(self, manifest_filename, test):
+        return [self.get_or_register_manifest_entry(entry, test)
+                for entry in self.read_manifest_entries(manifest_filename)]
 
     @staticmethod
     def get_algorithm(algorithm_name):
