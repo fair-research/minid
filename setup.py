@@ -24,7 +24,7 @@ setup(
     version=version['__VERSION__'],
     description='BD2K Minimum Viable Identifier',
     long_description=long_description,
-    url='http://minid.bd2k.org/',
+    url='https://fair-research.org/',
     author='Kyle Chard',
     author_email='chard@uchicago.edu',
     packages=find_packages(),
@@ -38,5 +38,14 @@ setup(
         'console_scripts': [
             'minid = minid.commands.main:main',
         ]
-    }
+    },
+    classifiers=[
+        'Intended Audience :: Developers',
+        'Intended Audience :: Science/Research',
+        'License :: OSI Approved :: Apache Software License',
+        'Programming Language :: Python :: 3.6',
+        'Programming Language :: Python :: 3.7',
+        'Programming Language :: Python :: 3.8',
+        'Operating System :: POSIX',
+    ]
 )
