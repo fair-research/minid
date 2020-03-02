@@ -27,7 +27,7 @@ def test_register(mock_identifiers_client, mocked_checksum, logged_in):
             'erc.what': 'foo.txt'
         },
         'location': [],
-        'namespace': MinidClient.NAMESPACE,
+        'namespace': MinidClient.IDENTIFIERS_NAMESPACE,
         'visible_to': ['public']
     }
     assert expected in mock_identifiers_client.create_identifier.call_args

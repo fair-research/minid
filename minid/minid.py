@@ -19,7 +19,7 @@ import hashlib
 
 import fair_research_login
 from identifiers_client.identifiers_api import IdentifierClient
-from minid.exc import MinidException, LoginRequired
+from minid.exc import MinidException, LoginRequired, UnknownIdentifier
 
 log = logging.getLogger(__name__)
 
@@ -31,9 +31,19 @@ class MinidClient(object):
     CONFIG = os.path.expanduser('~/.minid/minid-config.cfg')
 
     NAME = 'Minid Client'
-    NAMESPACE = 'minid'
-    TEST_NAMESPACE = 'minid-test'
-    MINID_PREFIX = 'hdl:'
+    # The namespaces within the identifiers.fair-research.org service
+    IDENTIFIERS_NAMESPACE = 'minid'
+    IDENTIFIERS_NAMESPACE_TEST = 'minid-test'
+
+    # Common prefixes associated with MINID
+    PREFIXES = {
+        'minid': 'minid:',
+        'hdl': 'hdl:20.500.12582/',
+    }
+    PREFIXES_TEST = {
+        'minid': 'minid.test:',
+        'hdl': 'hdl:20.500.12633/'
+    }
 
     def __init__(self, authorizer=None, app_name=None, native_client=None,
                  config=None,
@@ -116,10 +126,6 @@ class MinidClient(object):
             authorizer=self.authorizer
         )
 
-    def is_minid(self, entity):
-        """Returns True if entity is a minid, False otherwise"""
-        return isinstance(entity, str) and entity.startswith(self.MINID_PREFIX)
-
     def register(self, filename, title='', locations=None, test=False):
         """
         Register a file and produce an identifier. The file is automatically
@@ -142,7 +148,8 @@ class MinidClient(object):
             raise LoginRequired('The Minid Client did not have a valid '
                                 'authorizer.')
         locations = locations or []
-        namespace = self.TEST_NAMESPACE if test is True else self.NAMESPACE
+        namespace = self.IDENTIFIERS_NAMESPACE_TEST if test is True \
+            else self.IDENTIFIERS_NAMESPACE
         metadata = {
             '_profile': 'erc',
             'erc.what': title or filename
@@ -188,7 +195,7 @@ class MinidClient(object):
           with 'ark:/' it will be treated as a minid. Otherwise, it will
           be treated as a file.
         """
-        if self.is_minid(entity):
+        if self.is_valid_identifier(entity):
             return self.identifiers_client.get_identifier(entity)
         else:
             alg = self.get_algorithm(algorithm)
@@ -233,3 +240,50 @@ class MinidClient(object):
             raise MinidException('Unable to checksum file {}'.format(
                 file_path)
             )
+
+    @classmethod
+    def is_valid_identifier(cls, identifier):
+        return bool(cls.get_identifier_prefix(identifier))
+
+    @classmethod
+    def get_identifier_prefix(cls, identifier):
+        """Fetch the namespace part of the identifier, which will be the
+        leading characters of the identifier. Examples include:
+        * "minid:"
+        * "minid.test:"
+        * "hdl:20.500.12633"
+        * "hld:20.500.12582"
+        Returns the prefix
+        """
+        prefixes = (list(cls.PREFIXES.values()) +
+                    list(cls.PREFIXES_TEST.values()))
+        prefix = list(filter(lambda pfx: identifier.startswith(pfx), prefixes))
+        return prefix[0] if prefix else None
+
+    @classmethod
+    def is_test(cls, identifier):
+        return any([identifier.startswith(idpx)
+                    for idpx in cls.PREFIXES_TEST.values()])
+
+    @classmethod
+    def to_identifier(cls, identifier, identifier_type='hdl'):
+        if identifier_type not in cls.PREFIXES:
+            raise UnknownIdentifier(f'Identifier type {identifier_type} is '
+                                    'not supported by Minid.')
+        prefix = cls.get_identifier_prefix(identifier)
+        if prefix is None:
+            raise UnknownIdentifier(f'Given identifier {identifier} is not '
+                                    'supported by Minid.')
+        if cls.is_test(identifier):
+            identifier_prefix = cls.PREFIXES_TEST[identifier_type]
+        else:
+            identifier_prefix = cls.PREFIXES[identifier_type]
+        return identifier.replace(prefix, identifier_prefix)
+
+    @classmethod
+    def to_minid(cls, identifier):
+        """Return a Minid from the given Identifier. The Identifier must be of
+        a type supported by Minid. Check the docs for a full list of supported
+        types.
+        """
+        return cls.to_identifier(identifier, identifier_type='minid')
