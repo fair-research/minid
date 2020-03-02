@@ -39,10 +39,12 @@ class MinidClient(object):
     PREFIXES = {
         'minid': 'minid:',
         'hdl': 'hdl:20.500.12582/',
+        'ark': 'ark:/57799/',
     }
     PREFIXES_TEST = {
         'minid': 'minid.test:',
-        'hdl': 'hdl:20.500.12633/'
+        'hdl': 'hdl:20.500.12633/',
+        'ark': 'ark:/99999/',
     }
 
     def __init__(self, authorizer=None, app_name=None, native_client=None,
