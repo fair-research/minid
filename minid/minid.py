@@ -196,7 +196,8 @@ class MinidClient(object):
           be treated as a file.
         """
         if self.is_valid_identifier(entity):
-            return self.identifiers_client.get_identifier(entity)
+            hdl = self.to_identifier(entity, 'hdl')
+            return self.identifiers_client.get_identifier(hdl)
         else:
             alg = self.get_algorithm(algorithm)
             checksum = self.compute_checksum(entity, alg)
