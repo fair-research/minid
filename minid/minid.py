@@ -243,17 +243,23 @@ class MinidClient(object):
 
     @classmethod
     def is_valid_identifier(cls, identifier):
+        """Returns True if the identifier is known and can be resolved by Minid
+        """
         return bool(cls.get_identifier_prefix(identifier))
 
     @classmethod
     def get_identifier_prefix(cls, identifier):
-        """Fetch the namespace part of the identifier, which will be the
-        leading characters of the identifier. Examples include:
-        * "minid:"
-        * "minid.test:"
-        * "hdl:20.500.12633"
-        * "hld:20.500.12582"
-        Returns the prefix
+        """Returns the prefix for the given identifier. Checks in both the
+        normal prefixes and the test prefixes.
+        ** Parameters **
+          ``identifier`` (*string*) A Minid compatible identifier. Ex:
+          minid:foobarbaz
+        ** Returns **
+        The prefix for the given identifer. Examples
+          * "minid:"
+          * "minid.test:"
+          * "hdl:20.500.12633"
+          * "hld:20.500.12582"
         """
         prefixes = (list(cls.PREFIXES.values()) +
                     list(cls.PREFIXES_TEST.values()))
@@ -262,11 +268,26 @@ class MinidClient(object):
 
     @classmethod
     def is_test(cls, identifier):
+        """Returns true if the identifier exists within the test namespace"""
         return any([identifier.startswith(idpx)
                     for idpx in cls.PREFIXES_TEST.values()])
 
     @classmethod
     def to_identifier(cls, identifier, identifier_type='hdl'):
+        """Returns the prefix for the given identifier. Checks in both the
+        normal prefixes and the test prefixes.
+        ** Parameters **
+          ``identifier`` (*string*) A Minid compatible identifier. Ex:
+          minid:foobarbaz
+          ``identifier_type`` (*string*) The preferred type of identifier to
+          translate the given *identifier*.
+        ** Returns **
+        The translated identifier as a string type. Examples:
+          * "minid:foobarbaz"
+          * "minid.test:foobarbaz"
+          * "hdl:20.500.12633/foobarbaz"
+          * "hld:20.500.12582/foobarbaz"
+        """
         if identifier_type not in cls.PREFIXES:
             raise UnknownIdentifier(f'Identifier type {identifier_type} is '
                                     'not supported by Minid.')
@@ -282,8 +303,7 @@ class MinidClient(object):
 
     @classmethod
     def to_minid(cls, identifier):
-        """Return a Minid from the given Identifier. The Identifier must be of
-        a type supported by Minid. Check the docs for a full list of supported
-        types.
+        """Convenience method. Calls (to_identifier(identifier, 'minid').
+        Returns the given identifier as a Minid.
         """
         return cls.to_identifier(identifier, identifier_type='minid')
