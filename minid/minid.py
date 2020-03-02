@@ -18,6 +18,7 @@ import logging
 import hashlib
 
 import fair_research_login
+import globus_sdk
 from identifiers_client.identifiers_api import IdentifierClient
 from minid.exc import MinidException, LoginRequired
 
@@ -27,7 +28,7 @@ log = logging.getLogger(__name__)
 class MinidClient(object):
     CLIENT_ID = 'fa63f71e-4b8c-4032-b78e-0fc6214efd0b'
     SCOPES = ('https://auth.globus.org/scopes/identifiers.fair-research.org/'
-              'writer')
+              'writer', 'openid', 'profile')
     CONFIG = os.path.expanduser('~/.minid/minid-config.cfg')
 
     NAME = 'Minid Client'
@@ -96,7 +97,10 @@ class MinidClient(object):
         if self._authorizer is not None:
             return self._authorizer
         try:
-            return self.native_client.get_authorizers_by_scope()[self.SCOPES]
+            return self.native_client.get_authorizers_by_scope()[
+                'https://auth.globus.org/scopes/identifiers.fair-research.org/'
+                'writer'
+            ]
         except fair_research_login.LoadError:
             return None
 
@@ -115,6 +119,21 @@ class MinidClient(object):
             app_name=self.app_name,
             authorizer=self.authorizer
         )
+
+    def get_cached_created_by(self):
+        """Get the 'created_by' field by pulling the current users name from
+        Globus Auth. The field is only fetched the first time after the client
+        has been instantiated. After that, the value is cached and returned
+        from memory. This speeds things up if calling register() multiple times
+        from the same client.
+        """
+        if getattr(self, '_cached_created_by', None):
+            return self._cached_created_by
+        authorizer = self.native_client.get_authorizers()['auth.globus.org']
+        ac = globus_sdk.AuthClient(authorizer=authorizer)
+        user_info = ac.oauth2_userinfo()
+        self._cached_created_by = user_info.data.get('name', '')
+        return self._cached_created_by
 
     def is_minid(self, entity):
         """Returns True if entity is a minid, False otherwise"""
@@ -145,7 +164,8 @@ class MinidClient(object):
         namespace = self.TEST_NAMESPACE if test is True else self.NAMESPACE
         metadata = {
             'title': title or filename,
-            'length': os.path.getsize(filename)
+            'length': os.path.getsize(filename),
+            'created_by': self.get_cached_created_by(),
         }
         checksums = [{
             'function': 'sha256',

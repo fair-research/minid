@@ -16,7 +16,8 @@ def test_load_logged_out_authorizer(logged_out):
     assert MinidClient().identifiers_client.authorizer is None
 
 
-def test_register(mock_identifiers_client, mocked_checksum, logged_in):
+def test_register(mock_identifiers_client, mocked_checksum, logged_in,
+                  mock_get_cached_created_by):
     cli = MinidClient()
     cli.register('foo.txt')
 
@@ -24,7 +25,8 @@ def test_register(mock_identifiers_client, mocked_checksum, logged_in):
         'checksums': [{'function': 'sha256', 'value': 'mock_checksum'}],
         'metadata': {
             'title': 'foo.txt',
-            'length': 21
+            'length': 21,
+            'created_by': 'Test User',
         },
         'location': [],
         'namespace': MinidClient.NAMESPACE,
@@ -84,3 +86,16 @@ def test_compute_checksum():
     # Prehashed sum with openssl, file contents "12345"
     checksum = MinidClient.compute_checksum(TEST_CHECKSUM_FILE)
     assert checksum == TEST_CHECKSUM_VALUE
+
+
+def test_get_cached_created_by(mock_globus_sdk_auth, logged_in):
+    mc = MinidClient()
+    mc.get_cached_created_by()
+    assert mock_globus_sdk_auth.called
+
+
+def test_get_cached_created_by_is_cached(mock_globus_sdk_auth, logged_in):
+    mc = MinidClient()
+    mc.get_cached_created_by()
+    mc.get_cached_created_by()
+    assert mock_globus_sdk_auth.call_count == 1
