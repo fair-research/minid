@@ -283,7 +283,10 @@ class MinidClient(object):
         """
         If the entity within the manifest has already been registered, fetch
         the remote entity. If None exists, create a new Minid for the data
-        within the manifest entity. Return the 'minid' for the URL.
+        within the manifest entity. Return the 'minid' for the URL. If the
+        record contains multiple hashes, the first one to return a result will
+        be used. If many are returned for the same checksum, the identifier
+        with the most recent date is used.
         ** Parameters **
           ``rfm_record`` (*dict*)
             A single record within a remote_file_manifest. The record must be a
@@ -315,10 +318,20 @@ class MinidClient(object):
 
         """
         log.debug('Checking entity {}'.format(rfm_record['filename']))
-        existing_entities = self.identifiers_client.get_identifier_by_checksum(
-            rfm_record['sha256']
-        )
-        entity = self.get_most_recent_active_entity(existing_entities)
+        searchable_checksums = [ck_sum
+                                for alg_name, ck_sum in rfm_record.items()
+                                if alg_name in SUPPORTED_CHECKSUMS]
+        # Attempt to find any matching identifier for all hashes within
+        # the record.
+        # Break on the first checksum that returns results, and return the most
+        # recent hashes for that record.
+        entity = None
+        for checksum in searchable_checksums:
+            existing_entities = self.identifiers_client.\
+                get_identifier_by_checksum(checksum)
+            entity = self.get_most_recent_active_entity(existing_entities)
+            if entity:
+                break
         if not entity:
             checksums = [{'function': f, 'value': rfm_record.get(f)}
                          for f in SUPPORTED_CHECKSUMS

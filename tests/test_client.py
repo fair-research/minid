@@ -68,6 +68,17 @@ def test_get_or_register_manifest_entity_with_preregistered(
     assert mock_gcs_get_by_checksum.called
 
 
+def test_get_oor_register_manifest_entry_with_no_matching_hashes(
+        mock_rfm, logged_in, mock_gcs_get_by_checksum, mock_gcs_register):
+    record = mock_rfm[0]
+    del record['sha256']
+    record['sha512'] = 'abcdefg_sha512hash_hijklmnop'
+    cli = MinidClient()
+    cli.get_or_register_rfm(record, True)
+    assert mock_gcs_register.called
+    assert mock_gcs_get_by_checksum.called
+
+
 def test_batch_register(monkeypatch, logged_in, mock_rfm, mock_gcs_register,
                         mock_gcs_get_by_checksum):
     cli = MinidClient()
