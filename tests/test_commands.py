@@ -217,7 +217,8 @@ def test_logged_out_commands(monkeypatch, cli_command_logged_out):
 def test_command_requires_login(monkeypatch, logged_out, mock_ic_error):
     register_mock = Mock()
     register_mock.side_effect = mock_ic_error
-    monkeypatch.setattr(minid.minid.MinidClient, 'register', register_mock)
+    monkeypatch.setattr(minid.minid.MinidClient, 'register_file',
+                        register_mock)
 
     log = Mock()
     args = cli.cli.parse_args(['register', '--test', 'foo.txt'])
@@ -230,7 +231,8 @@ def test_command_requires_login_json_output(monkeypatch, logged_in,
                                             mock_ic_error):
     register_mock = Mock()
     register_mock.side_effect = mock_ic_error
-    monkeypatch.setattr(minid.minid.MinidClient, 'register', register_mock)
+    monkeypatch.setattr(minid.minid.MinidClient, 'register_file',
+                        register_mock)
 
     log = Mock()
     args = cli.cli.parse_args(['--json', 'register', '--test', 'foo.txt'])
@@ -258,7 +260,8 @@ def test_command_general_identifiers_error(monkeypatch, logged_in,
     mock_ic_error.http_status = 500
     register_mock = Mock()
     register_mock.side_effect = mock_ic_error
-    monkeypatch.setattr(minid.minid.MinidClient, 'register', register_mock)
+    monkeypatch.setattr(minid.minid.MinidClient, 'register_file',
+                        register_mock)
 
     log = Mock()
     args = cli.cli.parse_args(['--verbose', 'register', '--test', 'foo.txt'])

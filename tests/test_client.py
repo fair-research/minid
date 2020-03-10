@@ -1,6 +1,7 @@
 import pytest
 import hashlib
 import os
+import sys
 from minid.minid import MinidClient
 from minid.exc import MinidException
 
@@ -28,7 +29,7 @@ def test_register_file(mock_identifiers_client, mocked_checksum, logged_in):
             'erc.what': 'foo.txt'
         },
         'location': [],
-        'namespace': MinidClient.NAMESPACE,
+        'namespace': MinidClient.IDENTIFIERS_NAMESPACE,
         'visible_to': ['public']
     }
     assert expected in mock_identifiers_client.create_identifier.call_args
@@ -44,7 +45,7 @@ def test_register_unsupported_checksum(mock_identifiers_client, logged_in):
         'checksums': [{'function': 'sha256', 'value': 'mock_checksum'}],
         'metadata': {'erc.what': 'foo.txt'},
         'location': [],
-        'namespace': MinidClient.NAMESPACE,
+        'namespace': MinidClient.IDENTIFIERS_NAMESPACE,
         'visible_to': ['public']
     }
     assert expected in mock_identifiers_client.create_identifier.call_args
@@ -180,6 +181,8 @@ def test_is_not_stream():
         assert MinidClient._is_stream(manifest) is False
 
 
+@pytest.mark.skipif(sys.version_info > (3, 6) and sys.version_info < (3, 7),
+                    reason='Skip if python 3.6')
 def test_read_manifest_entries_streamed(mock_streamed_rfm, mock_rfm,
                                         monkeypatch):
     monkeypatch.setattr(MinidClient, '_is_stream', Mock(return_value=True))

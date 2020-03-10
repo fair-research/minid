@@ -23,8 +23,7 @@ import datetime
 import fair_research_login
 from identifiers_client.identifiers_api import IdentifierClient
 from identifiers_client.main import SUPPORTED_CHECKSUMS
-from minid.exc import MinidException, LoginRequired
-
+from minid.exc import MinidException, LoginRequired, UnknownIdentifier
 log = logging.getLogger(__name__)
 
 
@@ -35,9 +34,21 @@ class MinidClient(object):
     CONFIG = os.path.expanduser('~/.minid/minid-config.cfg')
 
     NAME = 'Minid Client'
-    NAMESPACE = 'minid'
-    TEST_NAMESPACE = 'minid-test'
-    MINID_PREFIX = 'hdl:'
+    # The namespaces within the identifiers.fair-research.org service
+    IDENTIFIERS_NAMESPACE = 'minid'
+    IDENTIFIERS_NAMESPACE_TEST = 'minid-test'
+
+    # Common prefixes associated with MINID
+    PREFIXES = {
+        'minid': 'minid:',
+        'hdl': 'hdl:20.500.12582/',
+        'ark': 'ark:/57799/',
+    }
+    PREFIXES_TEST = {
+        'minid': 'minid.test:',
+        'hdl': 'hdl:20.500.12633/',
+        'ark': 'ark:/99999/',
+    }
 
     def __init__(self, authorizer=None, app_name=None, native_client=None,
                  config=None,
@@ -142,6 +153,10 @@ class MinidClient(object):
         ** Returns **
 
         """
+        if not self.is_logged_in():
+            raise LoginRequired('The Minid Client did not have a valid '
+                                'authorizer.')
+        locations = locations or []
         title = title or filename
         metadata = {
             '_profile': 'erc',
@@ -172,7 +187,8 @@ class MinidClient(object):
                         if c['function'] in SUPPORTED_CHECKSUMS]
         metadata = metadata or {}
         metadata['erc.what'] = title
-        namespace = self.TEST_NAMESPACE if test is True else self.NAMESPACE
+        namespace = (self.IDENTIFIERS_NAMESPACE_TEST if test is True
+                     else self.IDENTIFIERS_NAMESPACE)
         return self.identifiers_client.create_identifier(namespace=namespace,
                                                          visible_to=['public'],
                                                          metadata=metadata,
@@ -215,8 +231,9 @@ class MinidClient(object):
           python library and be supported by the Identifiers Service (all
           common algorithms in the hashlib module are supported).
         """
-        if self.is_minid(entity):
-            return self.identifiers_client.get_identifier(entity)
+        if self.is_valid_identifier(entity):
+            hdl = self.to_identifier(entity, 'hdl')
+            return self.identifiers_client.get_identifier(hdl)
         else:
             alg = self.get_algorithm(algorithm)
             checksum = self.compute_checksum(entity, alg)
@@ -407,3 +424,70 @@ class MinidClient(object):
             raise MinidException('Unable to checksum file {}'.format(
                 file_path)
             )
+
+    @classmethod
+    def is_valid_identifier(cls, identifier):
+        """Returns True if the identifier is known and can be resolved by Minid
+        """
+        return bool(cls.get_identifier_prefix(identifier))
+
+    @classmethod
+    def get_identifier_prefix(cls, identifier):
+        """Returns the prefix for the given identifier. Checks in both the
+        normal prefixes and the test prefixes.
+        ** Parameters **
+          ``identifier`` (*string*) A Minid compatible identifier. Ex:
+          minid:foobarbaz
+        ** Returns **
+        The prefix for the given identifer. Examples
+          * "minid:"
+          * "minid.test:"
+          * "hdl:20.500.12633"
+          * "hld:20.500.12582"
+        """
+        prefixes = (list(cls.PREFIXES.values()) +
+                    list(cls.PREFIXES_TEST.values()))
+        prefix = list(filter(lambda pfx: identifier.startswith(pfx), prefixes))
+        return prefix[0] if prefix else None
+
+    @classmethod
+    def is_test(cls, identifier):
+        """Returns true if the identifier exists within the test namespace"""
+        return any([identifier.startswith(idpx)
+                    for idpx in cls.PREFIXES_TEST.values()])
+
+    @classmethod
+    def to_identifier(cls, identifier, identifier_type='hdl'):
+        """Returns the prefix for the given identifier. Checks in both the
+        normal prefixes and the test prefixes.
+        ** Parameters **
+          ``identifier`` (*string*) A Minid compatible identifier. Ex:
+          minid:foobarbaz
+          ``identifier_type`` (*string*) The preferred type of identifier to
+          translate the given *identifier*.
+        ** Returns **
+        The translated identifier as a string type. Examples:
+          * "minid:foobarbaz"
+          * "minid.test:foobarbaz"
+          * "hdl:20.500.12633/foobarbaz"
+          * "hld:20.500.12582/foobarbaz"
+        """
+        if identifier_type not in cls.PREFIXES:
+            raise UnknownIdentifier(f'Identifier type {identifier_type} is '
+                                    'not supported by Minid.')
+        prefix = cls.get_identifier_prefix(identifier)
+        if prefix is None:
+            raise UnknownIdentifier(f'Given identifier {identifier} is not '
+                                    'supported by Minid.')
+        if cls.is_test(identifier):
+            identifier_prefix = cls.PREFIXES_TEST[identifier_type]
+        else:
+            identifier_prefix = cls.PREFIXES[identifier_type]
+        return identifier.replace(prefix, identifier_prefix)
+
+    @classmethod
+    def to_minid(cls, identifier):
+        """Convenience method. Calls (to_identifier(identifier, 'minid').
+        Returns the given identifier as a Minid.
+        """
+        return cls.to_identifier(identifier, identifier_type='minid')
