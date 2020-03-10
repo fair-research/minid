@@ -1,0 +1,16 @@
+language: python
+os:
+  - "linux"
+python:
+  - "3.6"
+  - "3.7"
+  - "3.8"
+install:
+  - pip install -e git+https://github.com/fair-research/globus-identifiers-client#egg=globus-identifiers-client
+  - pip install -r requirements.txt
+  - pip install -r test-requirements.txt
+  - pip install python-coveralls coverage
+script:
+  - flake8 minid tests examples
+  - pytest tests/ --cov minid --cov-report term-missing
+after_success: coveralls
