@@ -3,6 +3,7 @@ include requirements.txt
 include LICENSE
 
 graft minid
+prune tests
 
 # Patterns to exclude from any directory
 global-exclude *~
