@@ -19,7 +19,10 @@ def test_load_logged_out_authorizer(logged_out):
 
 
 def test_register(mock_identifiers_client, mocked_checksum, logged_in,
-                  mock_get_cached_created_by):
+                  mock_get_cached_created_by, monkeypatch):
+    stat = Mock()
+    stat.return_value.st_size = 21
+    monkeypatch.setattr(os, 'stat', stat)
     cli = MinidClient()
     cli.register_file('foo.txt')
 
