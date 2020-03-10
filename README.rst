@@ -1,5 +1,5 @@
-.. image:: https://travis-ci.org/fair-research/minid.svg?branch=master
-    :target: https://travis-ci.org/fair-research/minid
+.. image:: https://travis-ci.com/fair-research/minid.svg?branch=master
+    :target: https://travis-ci.com/fair-research/minid
 
 .. image:: https://coveralls.io/repos/github/fair-research/minid/badge.svg?branch=master
     :target: https://coveralls.io/github/fair-research/minid?branch=master
