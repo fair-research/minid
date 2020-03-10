@@ -1,0 +1,4 @@
+pytest-cov>=2.6.1
+pytest>=4.1.0
+mock>=2.0.0
+flake8>=3.7.5
