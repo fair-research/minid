@@ -30,7 +30,7 @@ def mock_auth_logout(monkeypatch):
 
 
 @pytest.fixture(params=['register', 'update'])
-def minid_auth_required_op(request):
+def minid_auth_required_op(request, logged_out):
     return request.param
 
 
