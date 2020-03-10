@@ -18,6 +18,7 @@ import logging
 import json
 from collections import OrderedDict
 import hashlib
+import datetime
 
 import fair_research_login
 from identifiers_client.identifiers_api import IdentifierClient
@@ -225,18 +226,12 @@ class MinidClient(object):
     def get_most_recent_active_entity(self, entities):
         """If there are multiple entities, return the entity with the latest
         timestamp."""
-        if len(entities.data['identifiers']) > 0:
-            return entities.data['identifiers'][-1]
-        return None
-        # HACK! Currently the date created is not returned, so we can't get the
-        # time for each identifier. Simply return the last one in the list the
-        # server generates.
-        # active_sorted = sorted(entities,
-        #                        key=lambda x: datetime.datetime.strptime(
-        #                            x["created"], '%Y-%m-%dT%H:%M:%S.%f'),
-        #                        reverse=True)
-        # if active_sorted:
-        #     return active_sorted[0]
+        active_sorted = sorted(entities,
+                               key=lambda x: datetime.datetime.strptime(
+                                   x["created"], '%Y-%m-%dT%H:%M:%S.%f'),
+                               reverse=True)
+        if active_sorted:
+            return active_sorted[0]
 
     @staticmethod
     def _is_stream(file_handle):
@@ -327,9 +322,9 @@ class MinidClient(object):
         # recent hashes for that record.
         entity = None
         for checksum in searchable_checksums:
-            existing_entities = self.identifiers_client.\
-                get_identifier_by_checksum(checksum)
-            entity = self.get_most_recent_active_entity(existing_entities)
+            exst = self.identifiers_client.get_identifier_by_checksum(checksum)
+            minids = exst.data.get('identifiers', [])
+            entity = self.get_most_recent_active_entity(minids)
             if entity:
                 break
         if not entity:

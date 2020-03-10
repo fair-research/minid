@@ -2,13 +2,14 @@ import pytest
 import os
 import json
 
-from mock import Mock, mock_open, patch
+from unittest.mock import Mock, mock_open, patch
 
 import fair_research_login
 from minid import MinidClient
 
-TEST_RFM = os.path.join(os.path.dirname(__file__), 'files',
-                        'mock_remote_file_manifest.json')
+BASE_DIR = os.path.join(os.path.dirname(__file__), 'files')
+TEST_RFM = os.path.join(BASE_DIR, 'mock_remote_file_manifest.json')
+MOCK_IDENTIFIERS = os.path.join(BASE_DIR, 'mock_identifiers_response.json')
 
 from minid.commands import main  # noqa -- ensures commands are loaded
 
@@ -53,7 +54,8 @@ def mock_gcs_register(mock_identifiers_client, mock_globus_response):
 @pytest.fixture
 def mock_gcs_get_by_checksum(mock_identifiers_client, mock_globus_response):
     mock_globus_response = mock_globus_response()
-    mock_globus_response.data = {'identifiers': []}
+    with open(MOCK_IDENTIFIERS) as f:
+        mock_globus_response.data = json.load(f)
     mock_identifiers_client.get_identifier_by_checksum.return_value = \
         mock_globus_response
     return mock_identifiers_client.get_identifier_by_checksum
