@@ -1,0 +1,12 @@
+[
+    {
+        "url": "https://example.com/foo.txt",
+        "sha256": "6e3fbc3cc8c58edd0d99cd4925d168a48cdbd7ffbfa1a72fb0371526fb201c06",
+        "filename": "foo.txt"
+    },
+    {
+        "url": "https://example.com/bar.txt",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "filename": "bar.txt"
+    }
+]

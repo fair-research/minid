@@ -61,6 +61,8 @@ def execute_command(cli, args, logger):
                         print_separator()
                 else:
                     pretty_print_minid(ret.data)
+        elif subcommand == 'batch-register':
+            print(json.dumps(ret, indent=2))
     except LoginRequired:
         message = 'Authentication required, please login and try again.'
         if args.json:

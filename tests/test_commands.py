@@ -38,9 +38,8 @@ LOGGED_IN_COMMANDS = [
     }),
     ({
         'command': ['register', 'foo.txt'],
-        'mock': (minid.MinidClient, 'register'),
-        'expected_call_args': ([], {
-            'filename': 'foo.txt',
+        'mock': (minid.MinidClient, 'register_file'),
+        'expected_call_args': (['foo.txt'], {
             'locations': None,
             'test': False,
             'title': None
@@ -48,9 +47,8 @@ LOGGED_IN_COMMANDS = [
     }),
     ({
         'command': ['--json', 'register', 'foo.txt'],
-        'mock': (minid.MinidClient, 'register'),
-        'expected_call_args': ([], {
-            'filename': 'foo.txt',
+        'mock': (minid.MinidClient, 'register_file'),
+        'expected_call_args': (['foo.txt'], {
             'locations': None,
             'test': False,
             'title': None
@@ -58,9 +56,8 @@ LOGGED_IN_COMMANDS = [
     }),
     ({
         'command': ['register', '--test', 'foo.txt'],
-        'mock': (minid.MinidClient, 'register'),
-        'expected_call_args': ([], {
-            'filename': 'foo.txt',
+        'mock': (minid.MinidClient, 'register_file'),
+        'expected_call_args': (['foo.txt'], {
             'locations': None,
             'test': True,
             'title': None
@@ -71,9 +68,8 @@ LOGGED_IN_COMMANDS = [
             'register', 'foo.txt', '--locations', 'http://example.com',
             'http://foo.example.com'
         ],
-        'mock': (minid.MinidClient, 'register'),
-        'expected_call_args': ([], {
-            'filename': 'foo.txt',
+        'mock': (minid.MinidClient, 'register_file'),
+        'expected_call_args': (['foo.txt'], {
             'locations': [
                 'http://example.com', 'http://foo.example.com'
             ],
@@ -83,9 +79,8 @@ LOGGED_IN_COMMANDS = [
     }),
     ({
         'command': ['register', 'foo.txt', '--title', 'My Foo'],
-        'mock': (minid.MinidClient, 'register'),
-        'expected_call_args': ([], {
-            'filename': 'foo.txt',
+        'mock': (minid.MinidClient, 'register_file'),
+        'expected_call_args': (['foo.txt'], {
             'locations': None,
             'test': False,
             'title': 'My Foo'
@@ -222,7 +217,8 @@ def test_logged_out_commands(monkeypatch, cli_command_logged_out):
 def test_command_requires_login(monkeypatch, logged_out, mock_ic_error):
     register_mock = Mock()
     register_mock.side_effect = mock_ic_error
-    monkeypatch.setattr(minid.minid.MinidClient, 'register', register_mock)
+    monkeypatch.setattr(minid.minid.MinidClient, 'register_file',
+                        register_mock)
 
     log = Mock()
     args = cli.cli.parse_args(['register', '--test', 'foo.txt'])
@@ -235,7 +231,8 @@ def test_command_requires_login_json_output(monkeypatch, logged_in,
                                             mock_ic_error):
     register_mock = Mock()
     register_mock.side_effect = mock_ic_error
-    monkeypatch.setattr(minid.minid.MinidClient, 'register', register_mock)
+    monkeypatch.setattr(minid.minid.MinidClient, 'register_file',
+                        register_mock)
 
     log = Mock()
     args = cli.cli.parse_args(['--json', 'register', '--test', 'foo.txt'])
@@ -263,7 +260,8 @@ def test_command_general_identifiers_error(monkeypatch, logged_in,
     mock_ic_error.http_status = 500
     register_mock = Mock()
     register_mock.side_effect = mock_ic_error
-    monkeypatch.setattr(minid.minid.MinidClient, 'register', register_mock)
+    monkeypatch.setattr(minid.minid.MinidClient, 'register_file',
+                        register_mock)
 
     log = Mock()
     args = cli.cli.parse_args(['--verbose', 'register', '--test', 'foo.txt'])
