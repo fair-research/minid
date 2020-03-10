@@ -18,15 +18,20 @@ def test_load_logged_out_authorizer(logged_out):
     assert MinidClient().identifiers_client.authorizer is None
 
 
-def test_register_file(mock_identifiers_client, mocked_checksum, logged_in):
+def test_register(mock_identifiers_client, mocked_checksum, logged_in,
+                  mock_get_cached_created_by, monkeypatch):
+    stat = Mock()
+    stat.return_value.st_size = 21
+    monkeypatch.setattr(os, 'stat', stat)
     cli = MinidClient()
     cli.register_file('foo.txt')
 
     expected = {
         'checksums': [{'function': 'sha256', 'value': 'mock_checksum'}],
         'metadata': {
-            '_profile': 'erc',
-            'erc.what': 'foo.txt'
+            'title': 'foo.txt',
+            'length': 21,
+            'created_by': 'Test User',
         },
         'location': [],
         'namespace': MinidClient.IDENTIFIERS_NAMESPACE,
@@ -43,11 +48,15 @@ def test_register_unsupported_checksum(mock_identifiers_client, logged_in):
 
     expected = {
         'checksums': [{'function': 'sha256', 'value': 'mock_checksum'}],
-        'metadata': {'erc.what': 'foo.txt'},
+        'metadata': {
+            'title': 'foo.txt'
+        },
         'location': [],
         'namespace': MinidClient.IDENTIFIERS_NAMESPACE,
         'visible_to': ['public']
     }
+    from pprint import pprint
+    pprint(mock_identifiers_client.create_identifier.call_args)
     assert expected in mock_identifiers_client.create_identifier.call_args
 
 
@@ -119,7 +128,7 @@ def test_update(mock_identifiers_client, mocked_checksum, logged_in):
                locations=['http://example.com'])
     mock_identifiers_client.update_identifier.assert_called_with(
         'hdl:20.500.12633/mock-hdl',
-        metadata={'erc.what': 'foo.txt'},
+        metadata={'title': 'foo.txt'},
         location=['http://example.com']
     )
 
@@ -164,6 +173,19 @@ def test_compute_checksum():
     # Prehashed sum with openssl, file contents "12345"
     checksum = MinidClient.compute_checksum(TEST_CHECKSUM_FILE)
     assert checksum == TEST_CHECKSUM_VALUE
+
+
+def test_get_cached_created_by(mock_globus_sdk_auth, logged_in):
+    mc = MinidClient()
+    mc.get_cached_created_by()
+    assert mock_globus_sdk_auth.called
+
+
+def test_get_cached_created_by_is_cached(mock_globus_sdk_auth, logged_in):
+    mc = MinidClient()
+    mc.get_cached_created_by()
+    mc.get_cached_created_by()
+    assert mock_globus_sdk_auth.call_count == 1
 
 
 def test_read_manifest_entries(mock_rfm):

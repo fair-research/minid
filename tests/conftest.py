@@ -5,6 +5,7 @@ import json
 from unittest.mock import Mock, mock_open, patch
 
 import fair_research_login
+import globus_sdk
 from minid import MinidClient
 
 BASE_DIR = os.path.join(os.path.dirname(__file__), 'files')
@@ -17,9 +18,11 @@ from minid.commands import main  # noqa -- ensures commands are loaded
 @pytest.fixture
 def logged_in(monkeypatch):
     load_mock = Mock()
-    load_mock.return_value = {}
+    load_mock.return_value = {'auth.globus.org': 'mock_auth_tokens'}
     monkeypatch.setattr(MinidClient, 'is_logged_in', Mock(return_value=True))
     monkeypatch.setattr(fair_research_login.NativeClient, 'load_tokens',
+                        load_mock)
+    monkeypatch.setattr(fair_research_login.NativeClient, 'get_authorizers',
                         load_mock)
     return load_mock
 
@@ -38,8 +41,21 @@ def logged_out(monkeypatch):
 def mock_identifiers_client(monkeypatch):
     mock_identifier = Mock()
     monkeypatch.setattr(MinidClient, 'identifiers_client', mock_identifier)
-
     return mock_identifier
+
+
+@pytest.fixture
+def mock_globus_sdk_auth(monkeypatch):
+    mock_ac = Mock()
+    monkeypatch.setattr(globus_sdk, 'AuthClient', mock_ac)
+    return mock_ac
+
+
+@pytest.fixture
+def mock_get_cached_created_by(monkeypatch):
+    gccb = Mock(return_value='Test User')
+    monkeypatch.setattr(MinidClient, 'get_cached_created_by', gccb)
+    return gccb
 
 
 @pytest.fixture
