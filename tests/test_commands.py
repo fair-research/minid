@@ -38,9 +38,8 @@ LOGGED_IN_COMMANDS = [
     }),
     ({
         'command': ['register', 'foo.txt'],
-        'mock': (minid.MinidClient, 'register'),
-        'expected_call_args': ([], {
-            'filename': 'foo.txt',
+        'mock': (minid.MinidClient, 'register_file'),
+        'expected_call_args': (['foo.txt'], {
             'locations': None,
             'test': False,
             'title': None
@@ -48,9 +47,8 @@ LOGGED_IN_COMMANDS = [
     }),
     ({
         'command': ['--json', 'register', 'foo.txt'],
-        'mock': (minid.MinidClient, 'register'),
-        'expected_call_args': ([], {
-            'filename': 'foo.txt',
+        'mock': (minid.MinidClient, 'register_file'),
+        'expected_call_args': (['foo.txt'], {
             'locations': None,
             'test': False,
             'title': None
@@ -58,9 +56,8 @@ LOGGED_IN_COMMANDS = [
     }),
     ({
         'command': ['register', '--test', 'foo.txt'],
-        'mock': (minid.MinidClient, 'register'),
-        'expected_call_args': ([], {
-            'filename': 'foo.txt',
+        'mock': (minid.MinidClient, 'register_file'),
+        'expected_call_args': (['foo.txt'], {
             'locations': None,
             'test': True,
             'title': None
@@ -71,9 +68,8 @@ LOGGED_IN_COMMANDS = [
             'register', 'foo.txt', '--locations', 'http://example.com',
             'http://foo.example.com'
         ],
-        'mock': (minid.MinidClient, 'register'),
-        'expected_call_args': ([], {
-            'filename': 'foo.txt',
+        'mock': (minid.MinidClient, 'register_file'),
+        'expected_call_args': (['foo.txt'], {
             'locations': [
                 'http://example.com', 'http://foo.example.com'
             ],
@@ -83,9 +79,8 @@ LOGGED_IN_COMMANDS = [
     }),
     ({
         'command': ['register', 'foo.txt', '--title', 'My Foo'],
-        'mock': (minid.MinidClient, 'register'),
-        'expected_call_args': ([], {
-            'filename': 'foo.txt',
+        'mock': (minid.MinidClient, 'register_file'),
+        'expected_call_args': (['foo.txt'], {
             'locations': None,
             'test': False,
             'title': 'My Foo'

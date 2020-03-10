@@ -28,6 +28,11 @@ CREATE_UPDATE_ARGS = {
     '--locations': {
         'nargs': '+',
         'help': 'Remotely accessible location(s) for the file'
+    },
+    '--test': {
+        'action': 'store_true',
+        'default': False,
+        'help': 'Register non-permanent Minid in a "test" namespace.'
     }
 }
 
@@ -36,12 +41,7 @@ CREATE_UPDATE_ARGS = {
     [
         shared_argument('--title'),
         shared_argument('--locations'),
-        argument(
-            "--test",
-            action='store_true',
-            default=False,
-            help='Register non-permanent Minid in a "test" namespace.'
-        ),
+        shared_argument('--test'),
         argument(
             "filename",
             help='File to register'
@@ -52,18 +52,38 @@ CREATE_UPDATE_ARGS = {
     help='Register a new Minid',
 )
 def register(minid_client, args):
-    return minid_client.register(title=args.title, locations=args.locations,
-                                 test=args.test, filename=args.filename)
+    return minid_client.register_file(
+        args.filename,
+        title=args.title,
+        locations=args.locations,
+        test=args.test
+    )
+
+
+@subcommand(
+    [
+        shared_argument('--test'),
+        argument(
+            'filename',
+            help='File to register'
+        ),
+    ],
+    parent=subparsers,
+    shared_arguments=CREATE_UPDATE_ARGS,
+    help='Register a batch of minids from a file or file stream',
+)
+def batch_register(minid_client, args):
+    return minid_client.batch_register(args.filename, args.test)
 
 
 @subcommand([
-    shared_argument('--title'),
-    shared_argument('--locations'),
-    argument(
-        "minid",
-        help='Minid to update'
-    ),
-],
+        shared_argument('--title'),
+        shared_argument('--locations'),
+        argument(
+            "minid",
+            help='Minid to update'
+        ),
+    ],
     parent=subparsers,
     shared_arguments=CREATE_UPDATE_ARGS,
     help='Update an existing Minid'

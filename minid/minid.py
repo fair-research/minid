@@ -15,10 +15,14 @@ limitations under the License.
 """
 import os
 import logging
+import json
+from collections import OrderedDict
 import hashlib
+import datetime
 
 import fair_research_login
 from identifiers_client.identifiers_api import IdentifierClient
+from identifiers_client.main import SUPPORTED_CHECKSUMS
 from minid.exc import MinidException, LoginRequired
 
 log = logging.getLogger(__name__)
@@ -120,7 +124,7 @@ class MinidClient(object):
         """Returns True if entity is a minid, False otherwise"""
         return isinstance(entity, str) and entity.startswith(self.MINID_PREFIX)
 
-    def register(self, filename, title='', locations=None, test=False):
+    def register_file(self, filename, title='', locations=None, test=False):
         """
         Register a file and produce an identifier. The file is automatically
         checksummed using sha256, and the checksum is sent to the identifiers
@@ -138,24 +142,42 @@ class MinidClient(object):
         ** Returns **
 
         """
-        if not self.is_logged_in():
-            raise LoginRequired('The Minid Client did not have a valid '
-                                'authorizer.')
-        locations = locations or []
-        namespace = self.TEST_NAMESPACE if test is True else self.NAMESPACE
+        title = title or filename
         metadata = {
             '_profile': 'erc',
-            'erc.what': title or filename
+            'erc.what': title
         }
         checksums = [{
             'function': 'sha256',
             'value': self.compute_checksum(filename, hashlib.sha256())
         }]
+        return self.register(checksums, title=title, locations=locations,
+                             test=test, metadata=metadata)
+
+    def register(self, checksums, title='', locations=None, test=False,
+                 metadata=None):
+        """Register pre-prepared data, where the checksum already exists for
+        a given file."""
+        if not self.is_logged_in():
+            raise LoginRequired('The Minid Client did not have a valid '
+                                'authorizer.')
+        locations = locations or []
+        unsupported = [c for c in checksums
+                       if c['function'] not in SUPPORTED_CHECKSUMS]
+        if unsupported:
+            log.warning('The following checksums for {} are unsupported and '
+                        'will not be included: {}'.format(title,
+                                                          unsupported))
+        supported_ck = [c for c in checksums
+                        if c['function'] in SUPPORTED_CHECKSUMS]
+        metadata = metadata or {}
+        metadata['erc.what'] = title
+        namespace = self.TEST_NAMESPACE if test is True else self.NAMESPACE
         return self.identifiers_client.create_identifier(namespace=namespace,
                                                          visible_to=['public'],
                                                          metadata=metadata,
                                                          location=locations,
-                                                         checksums=checksums
+                                                         checksums=supported_ck
                                                          )
 
     def update(self, minid, title='', locations=None, metadata=None):
@@ -187,6 +209,11 @@ class MinidClient(object):
           entity can either be a filename or a minid. If the entity stars
           with 'ark:/' it will be treated as a minid. Otherwise, it will
           be treated as a file.
+          ``algorithm`` (*string*)
+          If the entity given is a file, it will be automatically checksummed
+          with the algorithm given. The algorithm must be in the hashlib
+          python library and be supported by the Identifiers Service (all
+          common algorithms in the hashlib module are supported).
         """
         if self.is_minid(entity):
             return self.identifiers_client.get_identifier(entity)
@@ -195,6 +222,153 @@ class MinidClient(object):
             checksum = self.compute_checksum(entity, alg)
             log.debug('File lookup using ({}) {}'.format(algorithm, checksum))
             return self.identifiers_client.get_identifier_by_checksum(checksum)
+
+    def get_most_recent_active_entity(self, entities):
+        """If there are multiple entities, return the entity with the latest
+        timestamp."""
+        active_sorted = sorted(entities,
+                               key=lambda x: datetime.datetime.strptime(
+                                   x["created"], '%Y-%m-%dT%H:%M:%S.%f'),
+                               reverse=True)
+        if active_sorted:
+            return active_sorted[0]
+
+    @staticmethod
+    def _is_stream(file_handle):
+        """
+        Returns true if the given file handle is a stream of remote file
+        manifests, false if it is a file.
+        """
+        line = file_handle.readline().lstrip()
+        file_handle.seek(0)
+        is_json_stream = False
+        if line.startswith('{'):
+            is_json_stream = True
+        return is_json_stream
+
+    @classmethod
+    def read_manifest_entries(cls, manifest_filename):
+        """
+        Read a given filename and yield each entity in the manifest until
+        there are no more manifests. Works if the manifest_filename is a stream
+        or a regular file.
+
+        """
+        with open(manifest_filename, 'r') as manifest:
+            is_stream = cls._is_stream(manifest)
+            log.info('Parsing {} from filename {}'
+                     ''.format('stream' if is_stream else 'file',
+                               manifest_filename)
+                     )
+
+            # Fetch 'entities' to iterate upon.
+            if not is_stream:
+                entities = json.load(manifest, object_pairs_hook=OrderedDict)
+            else:
+                entities = manifest
+
+            # Iterate over the entities and yield each one until we run out.
+            for entity in entities:
+                if is_stream:
+                    yield json.loads(entity, object_pairs_hook=OrderedDict)
+                else:
+                    yield entity
+
+    def get_or_register_rfm(self, rfm_record, test):
+        """
+        If the entity within the manifest has already been registered, fetch
+        the remote entity. If None exists, create a new Minid for the data
+        within the manifest entity. Return the 'minid' for the URL. If the
+        record contains multiple hashes, the first one to return a result will
+        be used. If many are returned for the same checksum, the identifier
+        with the most recent date is used.
+        ** Parameters **
+          ``rfm_record`` (*dict*)
+            A single record within a remote_file_manifest. The record must be a
+            dict with at least 'filename', 'url' and at least one
+            hash algorithm. 'md5' and 'sha256' are common, but anything in
+            python hashlib should work too.
+          ``test`` (*boolean*)
+            If the record does not exist and should be registered, this will
+            register it in the test namespace. This does not affect existing
+            records. Records already minted in one namespace will not be
+            re-registered in another namespace.
+        ** Returns **
+            A dict with 'url' replaced with the registered identifier
+        ** Example **
+        # Calling with a single RFM Record, with test=True to register as test:
+        get_or_register_rfm({
+                "url": "https://example.com/foo.txt",
+                "sha256": "6e3fbc3cc8c58edd0d99cd4925d18cdbd7ffbfa1a7fb201c06",
+                "filename": "foo.txt"
+            },
+            True
+        )
+        # Returns the following:
+          {
+            "url": "hdl:20.500.12633/07ace189c3d6",
+            "sha256": "6e3fbc3cc8c58edd0d99cd4925d18cdbd7ffbfa1a7fb201c06",
+            "filename": "foo.txt"
+          }
+
+        """
+        log.debug('Checking entity {}'.format(rfm_record['filename']))
+        searchable_checksums = [ck_sum
+                                for alg_name, ck_sum in rfm_record.items()
+                                if alg_name in SUPPORTED_CHECKSUMS]
+        # Attempt to find any matching identifier for all hashes within
+        # the record.
+        # Break on the first checksum that returns results, and return the most
+        # recent hashes for that record.
+        entity = None
+        for checksum in searchable_checksums:
+            exst = self.identifiers_client.get_identifier_by_checksum(checksum)
+            minids = exst.data.get('identifiers', [])
+            entity = self.get_most_recent_active_entity(minids)
+            if entity:
+                break
+        if not entity:
+            checksums = [{'function': f, 'value': rfm_record.get(f)}
+                         for f in SUPPORTED_CHECKSUMS
+                         if f in rfm_record.keys()]
+            locations = (rfm_record['url']
+                         if isinstance(rfm_record['url'], list)
+                         else [rfm_record['url']]
+                         )
+            entity = self.register(checksums, test=test, locations=locations,
+                                   title=rfm_record['filename'])
+        else:
+            log.warning('Entity already registered, using {} for {}.'
+                        ''.format(entity['identifier'],
+                                  rfm_record['filename']))
+        new_manifest = rfm_record.copy()
+        new_manifest['url'] = entity['identifier']
+        return new_manifest
+
+    def batch_register(self, manifest_filename, test):
+        """
+        Register All entries within a remote file manifest, and replace the
+        'url' on each record with an identifier. If an identifier already
+        exists for this record, use that and do not re-register the record.
+        The identifier is searched via the checksum given, until one matches
+        or no checksum matches.
+
+        The manifest must conform to the bdbag spec laid out here:
+        https://github.com/fair-research/bdbag/blob/master/doc/config.md#remote-file-manifest  # noqa
+        ** Parameters **
+          ``manifest_filename`` (*string*) The filename to a remote file
+            manifest. The file may either be a real file or a streamed file. If
+            it is a streamed file, each record must be encapsulated within each
+            line of the manifest.
+          ``test`` (*bool*) Register in the temporary test namespace, or the
+            permanent production namespace. Records are not re-registered if
+            one already exists.
+        ** Returns **
+          A list of records with 'url' field replaced with the identifier. See
+          get_or_register_rfm() above for more details.
+        """
+        return [self.get_or_register_rfm(record, test)
+                for record in self.read_manifest_entries(manifest_filename)]
 
     @staticmethod
     def get_algorithm(algorithm_name):
