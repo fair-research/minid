@@ -29,10 +29,6 @@ setup(
     author_email='chard@uchicago.edu',
     packages=find_packages(),
     install_requires=install_requires,
-    dependency_links=[
-        'git+https://github.com/fair-research/globus-identifiers-client'
-        '#egg=globus-identifiers-client',
-    ],
     license='Apache 2.0',
     entry_points={
         'console_scripts': [
