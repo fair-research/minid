@@ -1,6 +1,7 @@
 import pytest
 import hashlib
 import os
+import sys
 from minid.minid import MinidClient
 from minid.exc import MinidException
 
@@ -180,6 +181,8 @@ def test_is_not_stream():
         assert MinidClient._is_stream(manifest) is False
 
 
+@pytest.mark.skipif(sys.version_info < (3, 6),
+                    reason="requires python3.6 or higher")
 def test_read_manifest_entries_streamed(mock_streamed_rfm, mock_rfm,
                                         monkeypatch):
     monkeypatch.setattr(MinidClient, '_is_stream', Mock(return_value=True))
