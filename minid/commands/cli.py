@@ -18,7 +18,7 @@ import json
 import traceback
 from argparse import ArgumentParser
 
-from identifiers_client.identifiers_api import IdentifierClientError
+from fair_identifiers_client.identifiers_api import IdentifierClientError
 
 from minid.exc import MinidException, LoginRequired
 
