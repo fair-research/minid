@@ -22,11 +22,10 @@ with open('requirements.txt') as reqs:
 setup(
     name='minid',
     version=version['__VERSION__'],
-    description='BD2K Minimum Viable Identifier',
+    description='FAIR Research Minimum Viable Identifier',
     long_description=long_description,
     url='https://fair-research.org/',
-    author='Kyle Chard',
-    author_email='chard@uchicago.edu',
+    author="FAIR Research Team",
     packages=find_packages(),
     install_requires=install_requires,
     license='Apache 2.0',
