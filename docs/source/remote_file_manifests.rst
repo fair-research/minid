@@ -1,4 +1,4 @@
-file manifest format
+File Manifest Format
 --------------------
 Minids can only be assigned to a single file. In order to assign a minid to a collection of files we recommend using a `BDBag <https://github.com/ini-bdds/bdbag>`_ or the minid file manifest format.
 
