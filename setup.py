@@ -30,8 +30,8 @@ setup(
     packages=find_packages(),
     install_requires=install_requires,
     dependency_links=[
-        'git+https://github.com/fair-research/globus-identifiers-client'
-        '#egg=globus-identifiers-client',
+        'git+https://github.com/fair-research/fair-identifiers-client'
+        '#egg=fair-identifiers-client',
     ],
     license='Apache 2.0',
     entry_points={

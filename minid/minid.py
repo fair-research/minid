@@ -22,8 +22,8 @@ import datetime
 
 import fair_research_login
 import globus_sdk
-from identifiers_client.identifiers_api import IdentifierClient
-from identifiers_client.main import SUPPORTED_CHECKSUMS
+from fair_identifiers_client.identifiers_api import IdentifierClient
+from fair_identifiers_client.main import SUPPORTED_CHECKSUMS
 from minid.exc import MinidException, LoginRequired, UnknownIdentifier
 log = logging.getLogger(__name__)
 
