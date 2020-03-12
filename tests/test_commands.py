@@ -2,7 +2,7 @@ import logging
 import pytest
 
 from unittest.mock import Mock
-from identifiers_client.identifiers_api import IdentifierClientError
+from fair_identifiers_client.identifiers_api import IdentifierClientError
 
 from minid.commands import cli
 import minid
