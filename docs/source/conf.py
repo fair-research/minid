@@ -34,6 +34,10 @@ release = version
 
 # -- General configuration ---------------------------------------------------
 
+# Set the master doc to the index page. This is needed for Read The Docs to
+# properly pick up the 'contents'.
+master_doc = 'index'
+
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
