@@ -1,8 +1,8 @@
-.. image:: https://travis-ci.com/fair-research/minid.svg?branch=master
+.. image:: https://travis-ci.com/fair-research/minid.svg?branch=develop
     :target: https://travis-ci.com/fair-research/minid
 
-.. image:: https://coveralls.io/repos/github/fair-research/minid/badge.svg?branch=master
-    :target: https://coveralls.io/github/fair-research/minid?branch=master
+.. image:: https://coveralls.io/repos/github/fair-research/minid/badge.svg?branch=develop
+    :target: https://coveralls.io/github/fair-research/minid?branch=develop
 
 .. image:: https://img.shields.io/pypi/v/minid.svg
     :target: https://pypi.python.org/pypi/minid
@@ -20,7 +20,7 @@ Minimal Viable Identifier Client
 A minid (Minimal Viable Identifier) is an identifier that is sufficiently simple to make creation and use trivial, while still having enough substance to make data easily findable, accessible, interoperable, and reusable (FAIR). 
 
 
-See the `Read The Docs <https://minid.readthedocs.io/en/read-the-docs>`_ page for more info.
+See the `Read The Docs <https://minid.readthedocs.io/en/develop>`_ page for more info.
 
 Usage
 -----
