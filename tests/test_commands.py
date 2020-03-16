@@ -255,6 +255,16 @@ def test_cli_errors(logged_out):
     cli.execute_command(cli, args, Mock())
 
 
+def test_file_not_found(logged_in, monkeypatch):
+    log = Mock()
+    monkeypatch.setattr(cli, 'log', log)
+    args = cli.cli.parse_args(['register', 'not_found.txt'])
+    cli.execute_command(cli, args, Mock())
+    assert log.error.called
+    assert isinstance(log.error.call_args.args[0],
+                      FileNotFoundError)
+
+
 def test_command_general_identifiers_error(monkeypatch, logged_in,
                                            mock_ic_error):
     mock_ic_error.http_status = 500
