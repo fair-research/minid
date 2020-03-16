@@ -77,7 +77,7 @@ def execute_command(cli, args, logger):
             if ice.raw_json and ice.raw_json.get('message'):
                 error = ice.raw_json['message']
             log.error(error)
-    except MinidException as me:
+    except (MinidException, FileNotFoundError) as me:
         if args.json:
             print(json.dumps({'error': str(me)}))
         else:
