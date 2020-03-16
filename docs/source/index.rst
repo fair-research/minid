@@ -78,9 +78,6 @@ The CLI supports the following simple operations (Note: the `--test` flag create
 
     $ minid -h
 
-Landing pages are accessible via the minid website: minid.bd2k.org/minid/landingpage/<identifier>.
-
-
 Indices and tables
 ==================
 
