@@ -20,7 +20,7 @@ Minimal Viable Identifier Client
 A minid (Minimal Viable Identifier) is an identifier that is sufficiently simple to make creation and use trivial, while still having enough substance to make data easily findable, accessible, interoperable, and reusable (FAIR). 
 
 
-See the `Read The Docs <>`_ page for more info.
+See the `Read The Docs <https://minid.readthedocs.io/en/read-the-docs>`_ page for more info.
 
 Usage
 -----
