@@ -18,6 +18,14 @@ def test_load_logged_out_authorizer(logged_out):
     assert MinidClient().identifiers_client.authorizer is None
 
 
+def test_client_creates_config_dir_if_not_exists(monkeypatch):
+    mkdir = Mock()
+    monkeypatch.setattr(os, 'mkdir', mkdir)
+    monkeypatch.setattr(os.path, 'exists', Mock(return_value=False))
+    MinidClient()
+    assert mkdir.called
+
+
 def test_register(mock_identifiers_client, mocked_checksum, logged_in,
                   mock_get_cached_created_by, monkeypatch):
     stat = Mock()

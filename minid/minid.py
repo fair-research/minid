@@ -59,6 +59,10 @@ class MinidClient(object):
         self.base_url = base_url
         self._authorizer = authorizer
 
+        config_dir = os.path.dirname(self.config)
+        if not os.path.exists(config_dir):
+            os.mkdir(config_dir)
+
         if native_client is None:
             storage = fair_research_login.ConfigParserTokenStorage(
                 filename=self.config, section='tokens')
