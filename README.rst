@@ -24,9 +24,9 @@ See the `Read The Docs <https://minid.readthedocs.io/en/develop>`_ page for more
 
 Usage
 -----
-Install requires python 3.6 or higher::
+Minid 2.0.0 requires python 3.6 or higher::
 
-  $ pip install minid
+  $ pip install --pre minid
 
 Minting identifiers is simple and easy::
 
