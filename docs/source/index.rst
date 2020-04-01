@@ -15,22 +15,23 @@ to make data easily findable, accessible, interoperable, and reusable (FAIR).
 Requirements
 ------------
 
-Minid Requires the following:
-
-* Python 3.6 or higher
-
+Minid 2.0.0 Requires Python 3.6 or higher.
 
 Installation
 ------------
 
-The minid client and CLI is avaialble on PyPI. You can install it with the following command::
+Minid Client 2.0.0 is avaialble on PyPI. You can install it with the following command::
 
-  $ pip install minid
+  $ pip install --pre minid
+
+
+You can also install the `legacy Minid 1.3.0 version <https://github.com/fair-research/minid/tree/1.3.0>`_ with::
+
+  $ pip install minid==1.3.0
 
 Alternatively, you can download the source code and install using setup tools::
 
   $ git clone https://github.com/fair-research/minid
-
   $ python setup.py install
 
 
