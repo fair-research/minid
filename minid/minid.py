@@ -158,7 +158,8 @@ class MinidClient(object):
         """Returns True if entity is a minid, False otherwise"""
         return isinstance(entity, str) and entity.startswith(self.MINID_PREFIX)
 
-    def register_file(self, filename, title='', locations=None, test=False):
+    def register_file(self, filename, title='', locations=None, test=False,
+                      replaces=None):
         """
         Register a file and produce an identifier. The file is automatically
         checksummed using sha256, and the checksum is sent to the identifiers
@@ -173,6 +174,8 @@ class MinidClient(object):
           Network accessible locations for the given file
           ``test`` (* boolean *)
           Create the minid in a non-permanent test namespace
+          ``replaces`` (* string *)
+          ID of another identifier to replace
         ** Returns **
 
         """
@@ -191,10 +194,10 @@ class MinidClient(object):
             'value': self.compute_checksum(filename, hashlib.sha256())
         }]
         return self.register(checksums, title=title, locations=locations,
-                             test=test, metadata=metadata)
+                             test=test, metadata=metadata, replaces=replaces)
 
     def register(self, checksums, title='', locations=None, test=False,
-                 metadata=None):
+                 metadata=None, replaces=None):
         """Register pre-prepared data, where the checksum already exists for
         a given file."""
         if not self.is_logged_in():
@@ -213,14 +216,16 @@ class MinidClient(object):
         metadata['title'] = title
         namespace = (self.IDENTIFIERS_NAMESPACE_TEST if test is True
                      else self.IDENTIFIERS_NAMESPACE)
-        return self.identifiers_client.create_identifier(namespace=namespace,
-                                                         visible_to=['public'],
-                                                         metadata=metadata,
-                                                         location=locations,
-                                                         checksums=supported_ck
-                                                         )
+        return self.identifiers_client.create_identifier(
+            namespace=namespace,
+            visible_to=['public'],
+            metadata=metadata,
+            location=locations,
+            checksums=supported_ck,
+            replaces=replaces,
+        )
 
-    def update(self, minid, title='', locations=None, metadata=None):
+    def update(self, minid, title='', locations=None, metadata=None, **kwargs):
         """
         ** Parameters **
           ``minid`` (*string*)
@@ -231,7 +236,18 @@ class MinidClient(object):
           Network accessible locations for the given file
           ``test`` (* boolean *)
           Create the minid in a non-permanent test namespace
+          ``active`` (*boolean*)
+          The state of the identifier. It is either active or inactive
+          ``replaces`` (*string*)
+          The id of the identifier which this identifier replaces, if any
+          ``replaced_by`` (*string*)
+          The id of the identifier that replaces this identifier, if any
         """
+        allowed_kwargs = {'active', 'replaces', 'replaced_by'}
+        if not set(kwargs).issubset(allowed_kwargs):
+            raise MinidException('Update args not allowed: {}'.format(
+                set(kwargs).difference(allowed_kwargs)
+            ))
         if not self.is_logged_in():
             raise LoginRequired('The Minid Client did not have a valid '
                                 'authorizer.')
@@ -240,7 +256,8 @@ class MinidClient(object):
             metadata['title'] = title
         return self.identifiers_client.update_identifier(minid,
                                                          metadata=metadata,
-                                                         location=locations)
+                                                         location=locations,
+                                                         **kwargs)
 
     def check(self, entity, algorithm='sha256'):
         """

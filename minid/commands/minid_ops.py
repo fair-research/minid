@@ -33,7 +33,10 @@ CREATE_UPDATE_ARGS = {
         'action': 'store_true',
         'default': False,
         'help': 'Register non-permanent Minid in a "test" namespace.'
-    }
+    },
+    '--replaces': {
+        'help': 'This Minid replaces another Minid'
+    },
 }
 
 
@@ -42,6 +45,7 @@ CREATE_UPDATE_ARGS = {
         shared_argument('--title'),
         shared_argument('--locations'),
         shared_argument('--test'),
+        shared_argument('--replaces'),
         argument(
             "filename",
             help='File to register'
@@ -56,7 +60,8 @@ def register(minid_client, args):
         args.filename,
         title=args.title,
         locations=args.locations,
-        test=args.test
+        test=args.test,
+        replaces=args.replaces,
     )
 
 
@@ -79,6 +84,10 @@ def batch_register(minid_client, args):
 @subcommand([
         shared_argument('--title'),
         shared_argument('--locations'),
+        argument('--active', action='store_true',
+                 help='Set minid active or inactive'),
+        argument('--replaced-by'),
+        shared_argument('--replaces'),
         argument(
             "minid",
             help='Minid to update'
