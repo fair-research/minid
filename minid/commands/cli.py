@@ -16,6 +16,9 @@ limitations under the License.
 import logging
 import json
 import traceback
+import datetime
+import pytz
+import tzlocal
 from argparse import ArgumentParser
 
 from fair_identifiers_client.identifiers_api import IdentifierClientError
@@ -23,6 +26,8 @@ from fair_identifiers_client.identifiers_api import IdentifierClientError
 from minid.exc import MinidException, LoginRequired
 
 import minid
+
+DATE_FORMAT = '%A, %B %d, %Y %H:%M:%S %Z'
 
 cli = ArgumentParser()
 subparsers = cli.add_subparsers(dest="subcommand")
@@ -93,6 +98,18 @@ def print_separator():
     print('-' * 50)
 
 
+def print_date(iso_datestring):
+    """Pretty print dates in user's local time zone"""
+    if not iso_datestring.get('created'):
+        # created were a fairly recent addition, so some minids may not have a
+        # date associated with them
+        return ''
+    dt = datetime.datetime.fromisoformat(iso_datestring['created'])
+    user_tz = pytz.timezone(tzlocal.get_localzone().zone)
+    dt_local = user_tz.fromutc(dt)
+    return dt_local.strftime(DATE_FORMAT)
+
+
 def pretty_print_minid(command_json):
     """Minid specific function to print minid relevant fields to the console
     in a human readable format. Only supports select fields."""
@@ -103,7 +120,7 @@ def pretty_print_minid(command_json):
         },
         {
             'title': 'Title',
-            'func': lambda m: m['metadata'].get('erc.what')
+            'func': lambda m: m['metadata'].get('title')
         },
         {
             'title': 'Checksums',
@@ -113,16 +130,11 @@ def pretty_print_minid(command_json):
         },
         {
             'title': 'Created',
-            'func': lambda m: m['metadata'].get('erc.when')
+            'func': print_date,
         },
         {
             'title': 'Landing Page',
             'func': lambda m: m['landing_page']
-        },
-        {
-            'title': 'EZID Landing Page',
-            'func': lambda m: ('https://ezid.cdlib.org/id/{}'.format(
-                               m['identifier']))
         },
         {
             'title': 'Locations',
