@@ -111,13 +111,13 @@ def print_date(iso_datestring):
 def pretty_bytes(size):
     # Credit to: https://stackoverflow.com/a/1094933
     size = int(size)
-    for unit in ['bytes', 'KB', 'MB', 'GB', 'TB', 'PI', 'EI', 'ZB']:
+    for unit in ['bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB']:
         if abs(size) < 1024:
             if unit == 'bytes':
                 return '{} {}'.format(size, unit)
             return '{:.1f}{}'.format(size, unit)
         size /= 1024
-    return '{:.1f}{}'.format(size, 'Yi')
+    return '{:.1f}{}'.format(size, 'YB')
 
 
 def pretty_print_minid(cli, command_json):
