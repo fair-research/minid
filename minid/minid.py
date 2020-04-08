@@ -261,6 +261,9 @@ class MinidClient(object):
         metadata['title'] = title
         namespace = (self.IDENTIFIERS_NAMESPACE_TEST if test is True
                      else self.IDENTIFIERS_NAMESPACE)
+        if kwargs.get('replaces'):
+            kwargs['replaces'] = self.to_identifier(kwargs['replaces'],
+                                                    identifier_type='hdl')
         return self.identifiers_client.create_identifier(
             namespace=namespace,
             visible_to=['public'],
@@ -300,6 +303,10 @@ class MinidClient(object):
         if title:
             metadata['title'] = title
         identifier = self.to_identifier(minid, identifier_type='hdl')
+        for ent in kwargs:
+            if ent in ['replaces', 'replaced_by']:
+                kwargs[ent] = self.to_identifier(kwargs[ent],
+                                                 identifier_type='hdl')
         return self.identifiers_client.update_identifier(identifier,
                                                          metadata=metadata,
                                                          location=locations,
