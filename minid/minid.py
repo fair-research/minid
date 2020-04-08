@@ -197,7 +197,7 @@ class MinidClient(object):
                              test=test, metadata=metadata, replaces=replaces)
 
     def register(self, checksums, title='', locations=None, test=False,
-                 metadata=None, replaces=None):
+                 metadata=None, **kwargs):
         """Register pre-prepared data, where the checksum already exists for
         a given file."""
         if not self.is_logged_in():
@@ -222,7 +222,7 @@ class MinidClient(object):
             metadata=metadata,
             location=locations,
             checksums=supported_ck,
-            replaces=replaces,
+            **kwargs
         )
 
     def update(self, minid, title='', locations=None, metadata=None, **kwargs):
@@ -254,7 +254,7 @@ class MinidClient(object):
         locations, metadata = locations or [], metadata or {}
         if title:
             metadata['title'] = title
-        identifier = self.to_identifier(minid, identifier_type='hdf')
+        identifier = self.to_identifier(minid, identifier_type='hdl')
         return self.identifiers_client.update_identifier(identifier,
                                                          metadata=metadata,
                                                          location=locations,

@@ -57,12 +57,15 @@ CREATE_UPDATE_ARGS = {
     help='Register a new Minid',
 )
 def register(minid_client, args):
+    kwargs = dict()
+    if args.replaces:
+        kwargs['replaces'] = args.replaces
     return minid_client.register_file(
         args.filename,
         title=args.title,
         locations=args.locations,
         test=args.test,
-        replaces=args.replaces,
+        **kwargs
     )
 
 
@@ -106,11 +109,12 @@ def update(minid_client, args):
         raise MinidException('Cannot use both --set-active and --set-inactive')
     if args.set_active or args.set_inactive:
         kwargs['active'] = True if args.set_active else False
+    # Include other kwargs, but only if they have been set by the user.
+    for arg in [args.replaces, args.replaced_by]:
+        if arg:
+            kwargs[arg.__name__] = arg
     return minid_client.update(args.minid, title=args.title,
-                               locations=args.locations,
-                               replaces=args.replaces,
-                               replaced_by=args.replaced_by,
-                               **kwargs)
+                               locations=args.locations, **kwargs)
 
 
 @subcommand(

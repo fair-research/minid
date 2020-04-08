@@ -43,7 +43,8 @@ def test_register(mock_identifiers_client, mocked_checksum, logged_in,
         },
         'location': [],
         'namespace': MinidClient.IDENTIFIERS_NAMESPACE,
-        'visible_to': ['public']
+        'visible_to': ['public'],
+        'replaces': None,
     }
     assert expected in mock_identifiers_client.create_identifier.call_args
 
@@ -61,10 +62,8 @@ def test_register_unsupported_checksum(mock_identifiers_client, logged_in):
         },
         'location': [],
         'namespace': MinidClient.IDENTIFIERS_NAMESPACE,
-        'visible_to': ['public']
+        'visible_to': ['public'],
     }
-    from pprint import pprint
-    pprint(mock_identifiers_client.create_identifier.call_args)
     assert expected in mock_identifiers_client.create_identifier.call_args
 
 
