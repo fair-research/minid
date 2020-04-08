@@ -1,3 +1,5 @@
+pytz
+tzlocal
 fair-identifiers-client>=0.3.1
 globus-sdk>=1.8.0
 fair-research-login>=0.1.5
