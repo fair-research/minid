@@ -177,7 +177,8 @@ class MinidClient(object):
           ``replaces`` (* string *)
           ID of another identifier to replace
         ** Returns **
-
+        A dict describing attributes of the identifier.
+        See ``register`` for an example of the output.
         """
         if not self.is_logged_in():
             raise LoginRequired('The Minid Client did not have a valid '
@@ -199,7 +200,51 @@ class MinidClient(object):
     def register(self, checksums, title='', locations=None, test=False,
                  metadata=None, **kwargs):
         """Register pre-prepared data, where the checksum already exists for
-        a given file."""
+        a given file.
+        ** Parameters **
+          ``checksums`` (*list of dicts*)
+          A list of dicts containing checksums. Example:
+          [{'function': 'sha256', 'value': 'computed sha256 checksum'},]
+          ``title`` (* string *)
+          The title used to refer to the minid. Defaults to filename
+          ``locations`` (* array of strings *)
+          Network accessible locations for the given file
+          ``test`` (* boolean *)
+          Create the minid in a non-permanent test namespace
+          ``metadata`` (* dict *)
+          A dictionary containing extra metadata about the identifier. 'title'
+          is set by given ``title`` and created_by is by default the logged-in
+          user.
+          ``replaces`` (* string *)
+          ID of another identifier to replace
+        ** Returns **
+        A Dict describing the identifier. Example:
+        {
+          "active": true,
+          "admins": ['identities-of-admins'],
+          "checksums": [
+            {
+              "function": "sha256",
+              "value": "checksum"
+            }
+          ],
+          "created": "2020-04-08T14:17:53.212592",
+          "identifier": "hdl:20.500.12633/1234567",
+          "landing_page": "https://identifiers.fair-research.org/minid",
+          "location": [],
+          "metadata": {
+            "created_by": "The Creator",
+            "length": 76,
+            "title": "foo.txt"
+          },
+          "replaced_by": "hdl:20.500.12633/456",
+          "replaces": "hdl:20.500.12633/789",
+          "updated": "2020-04-08T15:26:25.256145",
+          "visible_to": [
+            "public"
+          ]
+        }
+        """
         if not self.is_logged_in():
             raise LoginRequired('The Minid Client did not have a valid '
                                 'authorizer.')
