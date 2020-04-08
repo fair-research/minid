@@ -18,6 +18,7 @@ import logging
 
 from minid.commands.cli import subparsers
 from minid.commands.argparse_ext import subcommand, argument, shared_argument
+from minid.exc import MinidException
 
 log = logging.getLogger(__name__)
 
@@ -84,8 +85,10 @@ def batch_register(minid_client, args):
 @subcommand([
         shared_argument('--title'),
         shared_argument('--locations'),
-        argument('--active', action='store_true',
-                 help='Set minid active or inactive'),
+        argument('--set-active', action='store_true',
+                 help='Set minid active.'),
+        argument('--set-inactive', action='store_true',
+                 help='Set minid inactive'),
         argument('--replaced-by'),
         shared_argument('--replaces'),
         argument(
@@ -98,8 +101,16 @@ def batch_register(minid_client, args):
     help='Update an existing Minid'
 )
 def update(minid_client, args):
+    kwargs = dict()
+    if args.set_active and args.set_inactive:
+        raise MinidException('Cannot use both --set-active and --set-inactive')
+    if args.set_active or args.set_inactive:
+        kwargs['active'] = True if args.set_active else False
     return minid_client.update(args.minid, title=args.title,
-                               locations=args.locations)
+                               locations=args.locations,
+                               replaces=args.replaces,
+                               replaced_by=args.replaced_by,
+                               **kwargs)
 
 
 @subcommand(
