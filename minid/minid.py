@@ -254,7 +254,8 @@ class MinidClient(object):
         locations, metadata = locations or [], metadata or {}
         if title:
             metadata['title'] = title
-        return self.identifiers_client.update_identifier(minid,
+        identifier = self.to_identifier(minid, identifier_type='hdf')
+        return self.identifiers_client.update_identifier(identifier,
                                                          metadata=metadata,
                                                          location=locations,
                                                          **kwargs)
