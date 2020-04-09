@@ -90,7 +90,6 @@ LOGGED_IN_COMMANDS = [
         'command': ['update', 'foo.txt', '--title', 'My Bar'],
         'mock': (minid.MinidClient, 'update'),
         'expected_call_args': (['foo.txt'], {
-            'locations': None,
             'title': 'My Bar'
         })
     }),

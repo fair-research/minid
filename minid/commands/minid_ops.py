@@ -110,11 +110,13 @@ def update(minid_client, args):
     if args.set_active or args.set_inactive:
         kwargs['active'] = True if args.set_active else False
     # Include other kwargs, but only if they have been set by the user.
-    for arg in [args.replaces, args.replaced_by]:
-        if arg:
-            kwargs[arg.__name__] = arg
-    return minid_client.update(args.minid, title=args.title,
-                               locations=args.locations, **kwargs)
+    for name, value in [('replaces', args.replaces),
+                        ('replaced_by', args.replaced_by)]:
+        if value:
+            kwargs[name] = value
+    if args.locations:
+        kwargs['locations'] = args.locations
+    return minid_client.update(args.minid, title=args.title, **kwargs)
 
 
 @subcommand(

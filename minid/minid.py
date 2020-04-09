@@ -273,7 +273,7 @@ class MinidClient(object):
             **kwargs
         )
 
-    def update(self, minid, title='', locations=None, metadata=None, **kwargs):
+    def update(self, minid, title=None, **kwargs):
         """
         ** Parameters **
           ``minid`` (*string*)
@@ -291,7 +291,8 @@ class MinidClient(object):
           ``replaced_by`` (*string*)
           The id of the identifier that replaces this identifier, if any
         """
-        allowed_kwargs = {'active', 'replaces', 'replaced_by'}
+        allowed_kwargs = {'title', 'locations', 'metadata', 'active',
+                          'replaces', 'replaced_by'}
         if not set(kwargs).issubset(allowed_kwargs):
             raise MinidException('Update args not allowed: {}'.format(
                 set(kwargs).difference(allowed_kwargs)
@@ -299,18 +300,19 @@ class MinidClient(object):
         if not self.is_logged_in():
             raise LoginRequired('The Minid Client did not have a valid '
                                 'authorizer.')
-        locations, metadata = locations or [], metadata or {}
         if title:
+            metadata = kwargs.get('metadata', {})
             metadata['title'] = title
+            kwargs['metadata'] = metadata
         identifier = self.to_identifier(minid, identifier_type='hdl')
         for ent in kwargs:
             if ent in ['replaces', 'replaced_by']:
                 kwargs[ent] = self.to_identifier(kwargs[ent],
                                                  identifier_type='hdl')
-        return self.identifiers_client.update_identifier(identifier,
-                                                         metadata=metadata,
-                                                         location=locations,
-                                                         **kwargs)
+        if kwargs.get('locations'):
+            kwargs['location'] = kwargs.pop('locations')
+        return self.identifiers_client.update_identifier(
+            identifier, **kwargs)
 
     def check(self, entity, algorithm='sha256'):
         """
