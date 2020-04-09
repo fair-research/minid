@@ -16,6 +16,9 @@ limitations under the License.
 import logging
 import json
 import traceback
+import datetime
+import pytz
+import tzlocal
 from argparse import ArgumentParser
 
 from fair_identifiers_client.identifiers_api import IdentifierClientError
@@ -23,6 +26,8 @@ from fair_identifiers_client.identifiers_api import IdentifierClientError
 from minid.exc import MinidException, LoginRequired
 
 import minid
+
+DATE_FORMAT = '%A, %B %d, %Y %H:%M:%S %Z'
 
 cli = ArgumentParser()
 subparsers = cli.add_subparsers(dest="subcommand")
@@ -57,10 +62,10 @@ def execute_command(cli, args, logger):
                     log.info('No minids found for file.')
                 elif ret.data.get('identifiers'):
                     for m in ret.data.get('identifiers'):
-                        pretty_print_minid(m)
+                        pretty_print_minid(minid.MinidClient, m)
                         print_separator()
                 else:
-                    pretty_print_minid(ret.data)
+                    pretty_print_minid(minid.MinidClient, ret.data)
         elif subcommand == 'batch-register':
             print(json.dumps(ret, indent=2))
     except LoginRequired:
@@ -93,17 +98,39 @@ def print_separator():
     print('-' * 50)
 
 
-def pretty_print_minid(command_json):
+def print_date(iso_datestring):
+    """Pretty print dates in user's local time zone"""
+    if not iso_datestring:
+        return ''
+    dt = datetime.datetime.fromisoformat(iso_datestring)
+    user_tz = pytz.timezone(tzlocal.get_localzone().zone)
+    dt_local = user_tz.fromutc(dt)
+    return dt_local.strftime(DATE_FORMAT)
+
+
+def pretty_bytes(size):
+    # Credit to: https://stackoverflow.com/a/1094933
+    size = int(size)
+    for unit in ['bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB']:
+        if abs(size) < 1024:
+            if unit == 'bytes':
+                return '{} {}'.format(size, unit)
+            return '{:.1f}{}'.format(size, unit)
+        size /= 1024
+    return '{:.1f}{}'.format(size, 'YB')
+
+
+def pretty_print_minid(cli, command_json):
     """Minid specific function to print minid relevant fields to the console
     in a human readable format. Only supports select fields."""
     fields = [
         {
             'title': 'Minid',
-            'func': lambda m: m['identifier']
+            'func': lambda m: cli.to_minid(m['identifier'])
         },
         {
             'title': 'Title',
-            'func': lambda m: m['metadata'].get('erc.what')
+            'func': lambda m: m['metadata'].get('title')
         },
         {
             'title': 'Checksums',
@@ -112,21 +139,39 @@ def pretty_print_minid(command_json):
                                         for c in m['checksums']])
         },
         {
+            'title': 'Size',
+            'func': lambda m: pretty_bytes(m.get('metadata',
+                                                 {}).get('length', 0))
+        },
+        {
             'title': 'Created',
-            'func': lambda m: m['metadata'].get('erc.when')
+            'func': lambda m: print_date(m.get('created'))
+        },
+        {
+            'title': 'Updated',
+            'func': lambda m: print_date(m.get('updated'))
         },
         {
             'title': 'Landing Page',
             'func': lambda m: m['landing_page']
         },
         {
-            'title': 'EZID Landing Page',
-            'func': lambda m: ('https://ezid.cdlib.org/id/{}'.format(
-                               m['identifier']))
-        },
-        {
             'title': 'Locations',
             'func': lambda m: ', '.join(m['location'])
+        },
+        {
+            'title': 'Active',
+            'func': lambda m: m.get('active')
+        },
+        {
+            'title': 'Replaces',
+            'func': lambda m: (cli.to_minid(m['replaces'])
+                               if m.get('replaces') else '')
+        },
+        {
+            'title': 'Replaced By',
+            'func': lambda m: (cli.to_minid(m['replaced_by'])
+                               if m.get('replaced_by') else '')
         }
     ]
     prepped_lines = [(f['title'], f['func'](command_json)) for f in fields]
