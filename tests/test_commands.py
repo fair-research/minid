@@ -247,6 +247,11 @@ def test_command_print_help():
         cli.execute_command(cli, args, Mock())
 
 
+def test_cli_print_minid(mock_get_identifier, monkeypatch):
+    args = cli.cli.parse_args(['--verbose', 'check', 'minid.test:123456'])
+    cli.execute_command(cli, args, Mock())
+
+
 def test_cli_errors(logged_out):
     # Raises Logout Error
     args = cli.cli.parse_args(['register', '--test', 'foo.txt'])

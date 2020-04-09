@@ -67,6 +67,24 @@ def test_register_unsupported_checksum(mock_identifiers_client, logged_in):
     assert expected in mock_identifiers_client.create_identifier.call_args
 
 
+def test_register_replaces(mock_identifiers_client, logged_in):
+    cli = MinidClient()
+    checksums = [{'function': 'sha256', 'value': 'mock_checksum'}]
+    cli.register(checksums, title='foo.txt', replaces='minid:123456')
+
+    expected = {
+        'checksums': [{'function': 'sha256', 'value': 'mock_checksum'}],
+        'metadata': {
+            'title': 'foo.txt'
+        },
+        'location': [],
+        'namespace': MinidClient.IDENTIFIERS_NAMESPACE,
+        'visible_to': ['public'],
+        'replaces': 'hdl:20.500.12582/123456'
+    }
+    assert expected in mock_identifiers_client.create_identifier.call_args
+
+
 def test_get_most_recent_active_entity(mock_rfm, logged_in,
                                        mock_gcs_get_by_checksum,
                                        mock_gcs_register):
@@ -138,6 +156,21 @@ def test_update(mock_identifiers_client, mocked_checksum, logged_in):
         metadata={'title': 'foo.txt'},
         location=['http://example.com']
     )
+
+
+def test_update_invalid_args(mock_identifiers_client, logged_in):
+    cli = MinidClient()
+    with pytest.raises(MinidException):
+        cli.update('hdl:20.500.12633/1234567', non_existant_arg='foobar')
+
+
+def test_update_translates_hdls(mock_identifiers_client, logged_in):
+    cli = MinidClient()
+    cli.update('minid:first', replaces='minid:second', replaced_by='minid:thd')
+    assert mock_identifiers_client.update_identifier.called
+    kwargs = dict(mock_identifiers_client.update_identifier.call_args.kwargs)
+    assert kwargs['replaces'] == 'hdl:20.500.12582/second'
+    assert kwargs['replaced_by'] == 'hdl:20.500.12582/thd'
 
 
 def test_check(mock_identifiers_client, mocked_checksum):
