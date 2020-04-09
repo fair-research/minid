@@ -14,8 +14,16 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 import logging
+import sys
+import os
 
-from minid.commands.cli import cli, execute_command
+if __name__ == '__main__':
+    # Setup pathing
+    module = os.path.abspath(__file__)
+    path = os.path.dirname(os.path.dirname(os.path.dirname(module)))
+    sys.path.insert(0, path)
+
+from minid.commands.cli import cli, execute_command  # noqa
 # Importing the commands loads them into argparse.
 from minid.commands import auth, minid_ops, misc  # noqa
 
@@ -29,3 +37,7 @@ def main():
 
     args = cli.parse_args()
     execute_command(cli, args, logger)
+
+
+if __name__ == '__main__':
+    main()
