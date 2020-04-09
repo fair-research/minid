@@ -160,6 +160,10 @@ def pretty_print_minid(cli, command_json):
             'func': lambda m: ', '.join(m['location'])
         },
         {
+            'title': 'Active',
+            'func': lambda m: m.get('active')
+        },
+        {
             'title': 'Replaces',
             'func': lambda m: (cli.to_minid(m['replaces'])
                                if m.get('replaces') else '')
