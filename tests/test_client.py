@@ -5,7 +5,7 @@ import sys
 from minid.minid import MinidClient
 from minid.exc import MinidException
 
-from unittest.mock import Mock
+from unittest.mock import Mock, call
 
 FILES_DIR = os.path.join(os.path.dirname(__file__), 'files')
 TEST_RFM_FILE = os.path.join(FILES_DIR, 'mock_remote_file_manifest.json')
@@ -166,11 +166,13 @@ def test_update_invalid_args(mock_identifiers_client, logged_in):
 
 def test_update_translates_hdls(mock_identifiers_client, logged_in):
     cli = MinidClient()
+
     cli.update('minid:first', replaces='minid:second', replaced_by='minid:thd')
+    expected = call('hdl:20.500.12582/first',
+                    replaces='hdl:20.500.12582/second',
+                    replaced_by='hdl:20.500.12582/thd')
     assert mock_identifiers_client.update_identifier.called
-    kwargs = dict(mock_identifiers_client.update_identifier.call_args.kwargs)
-    assert kwargs['replaces'] == 'hdl:20.500.12582/second'
-    assert kwargs['replaced_by'] == 'hdl:20.500.12582/thd'
+    assert mock_identifiers_client.update_identifier.call_args == expected
 
 
 def test_check(mock_identifiers_client, mocked_checksum):
