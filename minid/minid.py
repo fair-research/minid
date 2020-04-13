@@ -312,9 +312,14 @@ class MinidClient(object):
         identifier = self.to_identifier(minid, identifier_type='hdl')
         for ent in kwargs:
             if ent in ['replaces', 'replaced_by']:
-                kwargs[ent] = self.to_identifier(kwargs[ent],
-                                                 identifier_type='hdl')
-        if kwargs.get('locations'):
+                # 'replaces' or 'replaced_by' MUST be either a vaild identifier
+                # or None to unset. to_identifier() will raise an exception if
+                # the identifier cannot resolve to hdl.
+                value = None if kwargs[ent] is None else self.to_identifier(
+                    kwargs[ent], identifier_type='hdl')
+                kwargs[ent] = value
+        # The 'location' field in the service is not plural
+        if 'locations' in kwargs.keys():
             kwargs['location'] = kwargs.pop('locations')
         return self.identifiers_client.update_identifier(
             identifier, **kwargs)
