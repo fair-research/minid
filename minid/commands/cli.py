@@ -161,7 +161,7 @@ def pretty_print_minid(cli, command_json):
         },
         {
             'title': 'Active',
-            'func': lambda m: m.get('active')
+            'func': lambda m: m.get('active') or 'False'
         },
         {
             'title': 'Replaces',
