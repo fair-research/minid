@@ -32,7 +32,22 @@ def shared_argument(arg):
 
 
 def parse_none_values(values, none_value='None'):
-    """Do the things to the options"""
+    """
+    Allows users to specify null values to unset options. For example, if
+    someone mistakenly added 'replaced' on a minid and wanted to remove it,
+    they could pass `minid update minid:123 --replaces None`
+    ** Parameters **
+    values -- A list of three tuple items. For example
+    [
+        ('replaces', args.replaces, None),
+        ('replaced_by', args.replaced_by, None),
+        ('locations', args.locations, []),
+    ]
+    Where each item is (name, value, This option's "None" value)
+
+    none_value -- The user-input value that indicates the option should be
+    set to None
+    """
     options = {}
     for option_name, option_value, option_none_value in values:
         if isinstance(option_value, str) and option_value == none_value:
