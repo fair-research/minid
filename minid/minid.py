@@ -158,7 +158,8 @@ class MinidClient(object):
         """Returns True if entity is a minid, False otherwise"""
         return isinstance(entity, str) and entity.startswith(self.MINID_PREFIX)
 
-    def register_file(self, filename, title='', locations=None, test=False):
+    def register_file(self, filename, title='', locations=None, test=False,
+                      replaces=None):
         """
         Register a file and produce an identifier. The file is automatically
         checksummed using sha256, and the checksum is sent to the identifiers
@@ -173,8 +174,11 @@ class MinidClient(object):
           Network accessible locations for the given file
           ``test`` (* boolean *)
           Create the minid in a non-permanent test namespace
+          ``replaces`` (* string *)
+          ID of another identifier to replace
         ** Returns **
-
+        A dict describing attributes of the identifier.
+        See ``register`` for an example of the output.
         """
         if not self.is_logged_in():
             raise LoginRequired('The Minid Client did not have a valid '
@@ -191,12 +195,56 @@ class MinidClient(object):
             'value': self.compute_checksum(filename, hashlib.sha256())
         }]
         return self.register(checksums, title=title, locations=locations,
-                             test=test, metadata=metadata)
+                             test=test, metadata=metadata, replaces=replaces)
 
     def register(self, checksums, title='', locations=None, test=False,
-                 metadata=None):
+                 metadata=None, **kwargs):
         """Register pre-prepared data, where the checksum already exists for
-        a given file."""
+        a given file.
+        ** Parameters **
+          ``checksums`` (*list of dicts*)
+          A list of dicts containing checksums. Example:
+          [{'function': 'sha256', 'value': 'computed sha256 checksum'},]
+          ``title`` (* string *)
+          The title used to refer to the minid. Defaults to filename
+          ``locations`` (* array of strings *)
+          Network accessible locations for the given file
+          ``test`` (* boolean *)
+          Create the minid in a non-permanent test namespace
+          ``metadata`` (* dict *)
+          A dictionary containing extra metadata about the identifier. 'title'
+          is set by given ``title`` and created_by is by default the logged-in
+          user.
+          ``replaces`` (* string *)
+          ID of another identifier to replace
+        ** Returns **
+        A Dict describing the identifier. Example:
+        {
+          "active": true,
+          "admins": ['identities-of-admins'],
+          "checksums": [
+            {
+              "function": "sha256",
+              "value": "checksum"
+            }
+          ],
+          "created": "2020-04-08T14:17:53.212592",
+          "identifier": "hdl:20.500.12633/1234567",
+          "landing_page": "https://identifiers.fair-research.org/minid",
+          "location": [],
+          "metadata": {
+            "created_by": "The Creator",
+            "length": 76,
+            "title": "foo.txt"
+          },
+          "replaced_by": "hdl:20.500.12633/456",
+          "replaces": "hdl:20.500.12633/789",
+          "updated": "2020-04-08T15:26:25.256145",
+          "visible_to": [
+            "public"
+          ]
+        }
+        """
         if not self.is_logged_in():
             raise LoginRequired('The Minid Client did not have a valid '
                                 'authorizer.')
@@ -213,14 +261,19 @@ class MinidClient(object):
         metadata['title'] = title
         namespace = (self.IDENTIFIERS_NAMESPACE_TEST if test is True
                      else self.IDENTIFIERS_NAMESPACE)
-        return self.identifiers_client.create_identifier(namespace=namespace,
-                                                         visible_to=['public'],
-                                                         metadata=metadata,
-                                                         location=locations,
-                                                         checksums=supported_ck
-                                                         )
+        if kwargs.get('replaces'):
+            kwargs['replaces'] = self.to_identifier(kwargs['replaces'],
+                                                    identifier_type='hdl')
+        return self.identifiers_client.create_identifier(
+            namespace=namespace,
+            visible_to=['public'],
+            metadata=metadata,
+            location=locations,
+            checksums=supported_ck,
+            **kwargs
+        )
 
-    def update(self, minid, title='', locations=None, metadata=None):
+    def update(self, minid, title=None, **kwargs):
         """
         ** Parameters **
           ``minid`` (*string*)
@@ -231,16 +284,45 @@ class MinidClient(object):
           Network accessible locations for the given file
           ``test`` (* boolean *)
           Create the minid in a non-permanent test namespace
+          ``active`` (*boolean*)
+          Set the state to active or not. The state will only change if the
+          ``active`` value is passed as true or false, not including this arg
+          will leave it the same.
+          ``replaces`` (*string*)
+          The id of the identifier which this identifier replaces. None will
+          clear an existing `replaces` value.
+          ``replaced_by`` (*string*)
+          The id of the identifier that replaces this identifier. None will
+          clear an existing `replaces` value.
         """
+        allowed_kwargs = {'title', 'locations', 'metadata', 'active',
+                          'replaces', 'replaced_by'}
+        if not set(kwargs).issubset(allowed_kwargs):
+            raise MinidException('Update args not allowed: {}'.format(
+                set(kwargs).difference(allowed_kwargs)
+            ))
         if not self.is_logged_in():
             raise LoginRequired('The Minid Client did not have a valid '
                                 'authorizer.')
-        locations, metadata = locations or [], metadata or {}
+        # Ensure metadata is set, even if it doesn't have anything in it.
+        kwargs['metadata'] = kwargs.get('metadata', {})
+        # Set title if it is given
         if title:
-            metadata['title'] = title
-        return self.identifiers_client.update_identifier(minid,
-                                                         metadata=metadata,
-                                                         location=locations)
+            kwargs['metadata']['title'] = title
+        identifier = self.to_identifier(minid, identifier_type='hdl')
+        for ent in kwargs:
+            if ent in ['replaces', 'replaced_by']:
+                # 'replaces' or 'replaced_by' MUST be either a vaild identifier
+                # or None to unset. to_identifier() will raise an exception if
+                # the identifier cannot resolve to hdl.
+                value = None if kwargs[ent] is None else self.to_identifier(
+                    kwargs[ent], identifier_type='hdl')
+                kwargs[ent] = value
+        # The 'location' field in the service is not plural
+        if 'locations' in kwargs.keys():
+            kwargs['location'] = kwargs.pop('locations')
+        return self.identifiers_client.update_identifier(
+            identifier, **kwargs)
 
     def check(self, entity, algorithm='sha256'):
         """

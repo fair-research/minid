@@ -59,6 +59,15 @@ def mock_get_cached_created_by(monkeypatch):
 
 
 @pytest.fixture
+def mock_get_identifier(mock_identifiers_client, mock_globus_response):
+    response = mock_globus_response()
+    with open(MOCK_IDENTIFIERS) as f:
+        response.data = json.load(f)
+    mock_identifiers_client.get_identifier = Mock(return_value=response)
+    return response
+
+
+@pytest.fixture
 def mock_gcs_register(mock_identifiers_client, mock_globus_response):
     mock_globus_response = mock_globus_response()
     mock_globus_response.data = {'identifier': 'newly_minted_identifier'}

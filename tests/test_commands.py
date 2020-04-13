@@ -87,18 +87,47 @@ LOGGED_IN_COMMANDS = [
         })
     }),
     ({
-        'command': ['update', 'foo.txt', '--title', 'My Bar'],
+        'command': ['update', 'minid:123', '--title', 'My Bar'],
         'mock': (minid.MinidClient, 'update'),
-        'expected_call_args': (['foo.txt'], {
-            'locations': None,
+        'expected_call_args': (['minid:123'], {
             'title': 'My Bar'
         })
     }),
     ({
-        'command': ['update', 'foo.txt', '--locations', 'foobar.com'],
+        'command': ['update', 'minid:123', '--locations', 'foobar.com'],
         'mock': (minid.MinidClient, 'update'),
-        'expected_call_args': (['foo.txt'], {
+        'expected_call_args': (['minid:123'], {
             'locations': ['foobar.com'], 'title': None
+        })
+    }),
+    ({
+        'command': ['update', 'minid:123', '--locations', 'None'],
+        'mock': (minid.MinidClient, 'update'),
+        'expected_call_args': (['minid:123'], {
+            'locations': [], 'title': None
+        })
+    }),
+    ({
+        'command': ['update', 'minid:123', '--replaced-by', 'None'],
+        'mock': (minid.MinidClient, 'update'),
+        'expected_call_args': (['minid:123'], {
+            'replaced_by': None, 'title': None
+        })
+    }),
+    ({
+        'command': ['update', 'minid:123', '--replaces', 'None'],
+        'mock': (minid.MinidClient, 'update'),
+        'expected_call_args': (['minid:123'], {
+            'replaces': None, 'title': None
+        })
+    }),
+    ({
+        'command': ['update', 'minid:123', '--replaces', 'None',
+                    '--replaced-by', 'None', '--locations', 'None'],
+        'mock': (minid.MinidClient, 'update'),
+        'expected_call_args': (['minid:123'], {
+            'replaced_by': None, 'title': None, 'locations': [],
+            'replaces': None
         })
     }),
     ({
@@ -245,6 +274,33 @@ def test_command_print_help():
     with pytest.raises(SystemExit):
         args = cli.cli.parse_args(['register'])
         cli.execute_command(cli, args, Mock())
+
+
+def test_pretty_print(mock_get_identifier, monkeypatch):
+    # No assertions are made here. Basically, we want to make sure pretty
+    # print does not throw errors.
+    identifier = mock_get_identifier.data['identifiers'][0]
+    cli.pretty_print_minid(minid.minid.MinidClient, identifier)
+
+
+def test_cli_print_minid(mock_get_identifier, monkeypatch):
+    """Test printing minids. Ensure that pretty print was called and the CLI
+    didn't bail out early due to another error."""
+    pretty_print_minid = Mock()
+    monkeypatch.setattr(cli, 'pretty_print_minid', pretty_print_minid)
+    args = cli.cli.parse_args(['--verbose', 'check', 'minid.test:123456'])
+    cli.execute_command(cli, args, Mock())
+    assert pretty_print_minid.called
+
+
+def test_cli_update_none_values(logged_in, mock_identifiers_client):
+    update = Mock()
+    mock_identifiers_client.update = update
+
+    args = cli.cli.parse_args(['update', 'minid:123', '--locations', 'none'])
+    cli.execute_command(cli, args, Mock())
+
+    assert not mock_identifiers_client.called
 
 
 def test_cli_errors(logged_out):

@@ -17,7 +17,9 @@ from __future__ import print_function
 import logging
 
 from minid.commands.cli import subparsers
-from minid.commands.argparse_ext import subcommand, argument, shared_argument
+from minid.commands.argparse_ext import (subcommand, argument, shared_argument,
+                                         parse_none_values)
+from minid.exc import MinidException
 
 log = logging.getLogger(__name__)
 
@@ -27,13 +29,16 @@ CREATE_UPDATE_ARGS = {
     },
     '--locations': {
         'nargs': '+',
-        'help': 'Remotely accessible location(s) for the file'
+        'help': 'Remotely accessible location(s) for the file. "None" to clear'
     },
     '--test': {
         'action': 'store_true',
         'default': False,
         'help': 'Register non-permanent Minid in a "test" namespace.'
-    }
+    },
+    '--replaces': {
+        'help': 'Specify this Minid is replaced by another. "None" to clear.'
+    },
 }
 
 
@@ -42,6 +47,7 @@ CREATE_UPDATE_ARGS = {
         shared_argument('--title'),
         shared_argument('--locations'),
         shared_argument('--test'),
+        shared_argument('--replaces'),
         argument(
             "filename",
             help='File to register'
@@ -52,11 +58,15 @@ CREATE_UPDATE_ARGS = {
     help='Register a new Minid',
 )
 def register(minid_client, args):
+    kwargs = dict()
+    if args.replaces:
+        kwargs['replaces'] = args.replaces
     return minid_client.register_file(
         args.filename,
         title=args.title,
         locations=args.locations,
-        test=args.test
+        test=args.test,
+        **kwargs
     )
 
 
@@ -79,6 +89,13 @@ def batch_register(minid_client, args):
 @subcommand([
         shared_argument('--title'),
         shared_argument('--locations'),
+        argument('--set-active', action='store_true',
+                 help='Set minid active.'),
+        argument('--set-inactive', action='store_true',
+                 help='Set minid inactive'),
+        argument('--replaced-by',
+                 help='Minid replacing this one. "None" to clear.'),
+        shared_argument('--replaces'),
         argument(
             "minid",
             help='Minid to update'
@@ -89,8 +106,20 @@ def batch_register(minid_client, args):
     help='Update an existing Minid'
 )
 def update(minid_client, args):
-    return minid_client.update(args.minid, title=args.title,
-                               locations=args.locations)
+    kwargs = dict()
+    if args.set_active and args.set_inactive:
+        raise MinidException('Cannot use both --set-active and --set-inactive')
+    if args.set_active or args.set_inactive:
+        kwargs['active'] = True if args.set_active else False
+
+    optional_values = [
+        ('replaces', args.replaces, None),
+        ('replaced_by', args.replaced_by, None),
+        ('locations', args.locations, []),
+    ]
+
+    kwargs.update(parse_none_values(optional_values))
+    return minid_client.update(args.minid, title=args.title, **kwargs)
 
 
 @subcommand(

@@ -5,7 +5,7 @@ import sys
 from minid.minid import MinidClient
 from minid.exc import MinidException
 
-from unittest.mock import Mock
+from unittest.mock import Mock, call
 
 FILES_DIR = os.path.join(os.path.dirname(__file__), 'files')
 TEST_RFM_FILE = os.path.join(FILES_DIR, 'mock_remote_file_manifest.json')
@@ -43,7 +43,8 @@ def test_register(mock_identifiers_client, mocked_checksum, logged_in,
         },
         'location': [],
         'namespace': MinidClient.IDENTIFIERS_NAMESPACE,
-        'visible_to': ['public']
+        'visible_to': ['public'],
+        'replaces': None,
     }
     assert expected in mock_identifiers_client.create_identifier.call_args
 
@@ -61,10 +62,26 @@ def test_register_unsupported_checksum(mock_identifiers_client, logged_in):
         },
         'location': [],
         'namespace': MinidClient.IDENTIFIERS_NAMESPACE,
-        'visible_to': ['public']
+        'visible_to': ['public'],
     }
-    from pprint import pprint
-    pprint(mock_identifiers_client.create_identifier.call_args)
+    assert expected in mock_identifiers_client.create_identifier.call_args
+
+
+def test_register_replaces(mock_identifiers_client, logged_in):
+    cli = MinidClient()
+    checksums = [{'function': 'sha256', 'value': 'mock_checksum'}]
+    cli.register(checksums, title='foo.txt', replaces='minid:123456')
+
+    expected = {
+        'checksums': [{'function': 'sha256', 'value': 'mock_checksum'}],
+        'metadata': {
+            'title': 'foo.txt'
+        },
+        'location': [],
+        'namespace': MinidClient.IDENTIFIERS_NAMESPACE,
+        'visible_to': ['public'],
+        'replaces': 'hdl:20.500.12582/123456'
+    }
     assert expected in mock_identifiers_client.create_identifier.call_args
 
 
@@ -139,6 +156,24 @@ def test_update(mock_identifiers_client, mocked_checksum, logged_in):
         metadata={'title': 'foo.txt'},
         location=['http://example.com']
     )
+
+
+def test_update_invalid_args(mock_identifiers_client, logged_in):
+    cli = MinidClient()
+    with pytest.raises(MinidException):
+        cli.update('hdl:20.500.12633/1234567', non_existant_arg='foobar')
+
+
+def test_update_translates_hdls(mock_identifiers_client, logged_in):
+    cli = MinidClient()
+
+    cli.update('minid:first', replaces='minid:second', replaced_by='minid:thd')
+    expected = call('hdl:20.500.12582/first',
+                    replaces='hdl:20.500.12582/second',
+                    replaced_by='hdl:20.500.12582/thd',
+                    metadata={})
+    assert mock_identifiers_client.update_identifier.called
+    assert mock_identifiers_client.update_identifier.call_args == expected
 
 
 def test_check(mock_identifiers_client, mocked_checksum):

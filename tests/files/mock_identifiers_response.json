@@ -1,45 +1,32 @@
-{"identifiers": [
 {
-  "admins": [],
-  "checksums": [
+  "identifiers": [
     {
-      "function": "sha256",
-      "value": "6e3fbc3cc8c58edd0d99cd4925d168a48cdbd7ffbfa1a72fb0371526fb201c06"
+      "active": true,
+      "admins": [],
+      "checksums": [
+        {
+          "function": "sha256",
+          "value": "f92d11e4316ac9f282571338dba4df819203639ff5cf8d32225d857828189998"
+        }
+      ],
+      "created": "2020-04-08T14:17:53.212592",
+      "identifier": "hdl:20.500.12633/foo-identifier",
+      "landing_page": "https://identifiers.fair-research.org/hdl:20.500.12633/7TDW9m5bRh5x",
+      "location": [
+        "https://example.com/foo",
+        "https://foo.example.com"
+      ],
+      "metadata": {
+        "created_by": "Test User",
+        "length": 76,
+        "title": "newfoo.txt"
+      },
+      "replaced_by": "hdl:20.500.12633/pouLDH6pRhtw",
+      "replaces": "hdl:20.500.12633/GaVWmJdHG0Sv",
+      "updated": "2020-04-09T14:23:17.840113",
+      "visible_to": [
+        "public"
+      ]
     }
-  ],
-  "created": "2020-03-03T16:48:03.463187",
-  "identifier": "hdl:20.500.12633/foo-identifier",
-  "landing_page": "https://identifiers.fair-research.org/hdl:20.500.12633/foo.txt",
-  "location": [],
-  "metadata": {
-    "_profile": "erc",
-    "erc.what": "foo.txt"
-  },
-  "updated": "2020-03-03T16:48:03.463187",
-  "visible_to": [
-    "public"
   ]
-},
-{
-  "admins": [],
-  "checksums": [
-    {
-      "function": "sha256",
-      "value": "6e3fbc3cc8c58edd0d99cd4925d168a48cdbd7ffbfa1a72fb0371526fb201c06"
-    }
-  ],
-  "created": "2020-05-03T16:48:03.463187",
-  "identifier": "hdl:20.500.12633/bar-identifier",
-  "landing_page": "https://identifiers.fair-research.org/hdl:20.500.12633/bar.txt",
-  "location": [],
-  "metadata": {
-    "_profile": "erc",
-    "erc.what": "bar.txt"
-  },
-  "updated": "2020-05-03T16:48:03.463187",
-  "visible_to": [
-    "public"
-  ]
-}
-]
 }
