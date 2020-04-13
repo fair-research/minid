@@ -27,6 +27,7 @@ from minid.exc import MinidException, LoginRequired
 
 import minid
 
+SERVICE_DATE_FORMAT = '%Y-%m-%dT%H:%M:%S.%f'
 DATE_FORMAT = '%A, %B %d, %Y %H:%M:%S %Z'
 
 cli = ArgumentParser()
@@ -102,7 +103,7 @@ def print_date(iso_datestring):
     """Pretty print dates in user's local time zone"""
     if not iso_datestring:
         return ''
-    dt = datetime.datetime.fromisoformat(iso_datestring)
+    dt = datetime.datetime.strptime(iso_datestring, SERVICE_DATE_FORMAT)
     user_tz = pytz.timezone(tzlocal.get_localzone().zone)
     dt_local = user_tz.fromutc(dt)
     return dt_local.strftime(DATE_FORMAT)
