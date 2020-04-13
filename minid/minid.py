@@ -304,10 +304,11 @@ class MinidClient(object):
         if not self.is_logged_in():
             raise LoginRequired('The Minid Client did not have a valid '
                                 'authorizer.')
+        # Ensure metadata is set, even if it doesn't have anything in it.
+        kwargs['metadata'] = kwargs.get('metadata', {})
+        # Set title if it is given
         if title:
-            metadata = kwargs.get('metadata', {})
-            metadata['title'] = title
-            kwargs['metadata'] = metadata
+            kwargs['metadata']['title'] = title
         identifier = self.to_identifier(minid, identifier_type='hdl')
         for ent in kwargs:
             if ent in ['replaces', 'replaced_by']:
