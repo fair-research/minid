@@ -31,6 +31,19 @@ def shared_argument(arg):
     return arg
 
 
+def parse_none_values(values, none_value='None'):
+    """Do the things to the options"""
+    options = {}
+    for option_name, option_value, option_none_value in values:
+        if isinstance(option_value, str) and option_value == none_value:
+            options[option_name] = option_none_value
+        elif isinstance(option_value, list) and option_value == [none_value]:
+            options[option_name] = option_none_value
+        elif option_value:
+            options[option_name] = option_value
+    return options
+
+
 def subcommand(args, parent, **kwargs):
     def decorator(func):
         shared_args = kwargs.pop('shared_arguments', {})

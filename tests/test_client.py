@@ -170,7 +170,8 @@ def test_update_translates_hdls(mock_identifiers_client, logged_in):
     cli.update('minid:first', replaces='minid:second', replaced_by='minid:thd')
     expected = call('hdl:20.500.12582/first',
                     replaces='hdl:20.500.12582/second',
-                    replaced_by='hdl:20.500.12582/thd')
+                    replaced_by='hdl:20.500.12582/thd',
+                    metadata={})
     assert mock_identifiers_client.update_identifier.called
     assert mock_identifiers_client.update_identifier.call_args == expected
 

@@ -285,11 +285,15 @@ class MinidClient(object):
           ``test`` (* boolean *)
           Create the minid in a non-permanent test namespace
           ``active`` (*boolean*)
-          The state of the identifier. It is either active or inactive
+          Set the state to active or not. The state will only change if the
+          ``active`` value is passed as true or false, not including this arg
+          will leave it the same.
           ``replaces`` (*string*)
-          The id of the identifier which this identifier replaces, if any
+          The id of the identifier which this identifier replaces. None will
+          clear an existing `replaces` value.
           ``replaced_by`` (*string*)
-          The id of the identifier that replaces this identifier, if any
+          The id of the identifier that replaces this identifier. None will
+          clear an existing `replaces` value.
         """
         allowed_kwargs = {'title', 'locations', 'metadata', 'active',
                           'replaces', 'replaced_by'}

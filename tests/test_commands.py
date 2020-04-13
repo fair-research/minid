@@ -87,17 +87,47 @@ LOGGED_IN_COMMANDS = [
         })
     }),
     ({
-        'command': ['update', 'foo.txt', '--title', 'My Bar'],
+        'command': ['update', 'minid:123', '--title', 'My Bar'],
         'mock': (minid.MinidClient, 'update'),
-        'expected_call_args': (['foo.txt'], {
+        'expected_call_args': (['minid:123'], {
             'title': 'My Bar'
         })
     }),
     ({
-        'command': ['update', 'foo.txt', '--locations', 'foobar.com'],
+        'command': ['update', 'minid:123', '--locations', 'foobar.com'],
         'mock': (minid.MinidClient, 'update'),
-        'expected_call_args': (['foo.txt'], {
+        'expected_call_args': (['minid:123'], {
             'locations': ['foobar.com'], 'title': None
+        })
+    }),
+    ({
+        'command': ['update', 'minid:123', '--locations', 'None'],
+        'mock': (minid.MinidClient, 'update'),
+        'expected_call_args': (['minid:123'], {
+            'locations': [], 'title': None
+        })
+    }),
+    ({
+        'command': ['update', 'minid:123', '--replaced-by', 'None'],
+        'mock': (minid.MinidClient, 'update'),
+        'expected_call_args': (['minid:123'], {
+            'replaced_by': None, 'title': None
+        })
+    }),
+    ({
+        'command': ['update', 'minid:123', '--replaces', 'None'],
+        'mock': (minid.MinidClient, 'update'),
+        'expected_call_args': (['minid:123'], {
+            'replaces': None, 'title': None
+        })
+    }),
+    ({
+        'command': ['update', 'minid:123', '--replaces', 'None',
+                    '--replaced-by', 'None', '--locations', 'None'],
+        'mock': (minid.MinidClient, 'update'),
+        'expected_call_args': (['minid:123'], {
+            'replaced_by': None, 'title': None, 'locations': [],
+            'replaces': None
         })
     }),
     ({

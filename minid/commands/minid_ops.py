@@ -17,7 +17,8 @@ from __future__ import print_function
 import logging
 
 from minid.commands.cli import subparsers
-from minid.commands.argparse_ext import subcommand, argument, shared_argument
+from minid.commands.argparse_ext import (subcommand, argument, shared_argument,
+                                         parse_none_values)
 from minid.exc import MinidException
 
 log = logging.getLogger(__name__)
@@ -28,7 +29,7 @@ CREATE_UPDATE_ARGS = {
     },
     '--locations': {
         'nargs': '+',
-        'help': 'Remotely accessible location(s) for the file'
+        'help': 'Remotely accessible location(s) for the file. "None" to clear'
     },
     '--test': {
         'action': 'store_true',
@@ -36,7 +37,7 @@ CREATE_UPDATE_ARGS = {
         'help': 'Register non-permanent Minid in a "test" namespace.'
     },
     '--replaces': {
-        'help': 'This Minid replaces another Minid'
+        'help': 'Specify this Minid is replaced by another. "None" to clear.'
     },
 }
 
@@ -92,7 +93,8 @@ def batch_register(minid_client, args):
                  help='Set minid active.'),
         argument('--set-inactive', action='store_true',
                  help='Set minid inactive'),
-        argument('--replaced-by'),
+        argument('--replaced-by',
+                 help='Minid replacing this one. "None" to clear.'),
         shared_argument('--replaces'),
         argument(
             "minid",
@@ -109,13 +111,14 @@ def update(minid_client, args):
         raise MinidException('Cannot use both --set-active and --set-inactive')
     if args.set_active or args.set_inactive:
         kwargs['active'] = True if args.set_active else False
-    # Include other kwargs, but only if they have been set by the user.
-    for name, value in [('replaces', args.replaces),
-                        ('replaced_by', args.replaced_by)]:
-        if value:
-            kwargs[name] = value
-    if args.locations:
-        kwargs['locations'] = args.locations
+
+    optional_values = [
+        ('replaces', args.replaces, None),
+        ('replaced_by', args.replaced_by, None),
+        ('locations', args.locations, []),
+    ]
+
+    kwargs.update(parse_none_values(optional_values))
     return minid_client.update(args.minid, title=args.title, **kwargs)
 
 
