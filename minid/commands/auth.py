@@ -16,6 +16,7 @@ limitations under the License.
 from __future__ import print_function
 import logging
 
+from fair_research_login.exc import LocalServerError
 from minid.commands.argparse_ext import subcommand, argument
 from minid.commands.cli import subparsers
 
@@ -57,11 +58,14 @@ def login(minid_client, args):
     except Exception:
         log.debug('Loading tokens failed, proceeding to login...')
 
-    minid_client.login(refresh_tokens=args.remember_me,
-                       no_local_server=args.no_local_server,
-                       no_browser=args.no_browser,
-                       force=args.force)
-    log.info('You have been logged in.')
+    try:
+        minid_client.login(refresh_tokens=args.remember_me,
+                           no_local_server=args.no_local_server,
+                           no_browser=args.no_browser,
+                           force=args.force)
+        log.info('You have been logged in.')
+    except LocalServerError as lse:
+        log.info(lse)
 
 
 @subcommand([], parent=subparsers, help='Logout to clear stored credentials')
