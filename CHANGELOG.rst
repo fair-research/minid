@@ -5,8 +5,29 @@ CHANGELOG
 -------
 
 * Fixed Fixed possible missing directory for minid (`#54`_)
+* Added this changelog (`#55`_)
+* Removed EZID link from Minid check command (`#60`_)
+* Added new fields to Minid check command (`#60`_)
+  * Added Created Date
+  * Added Updated Date
+  * Added Replaced By reference to remote Minid
+  * Added Replaces reference to remote Minid
+  * Added Active Minid Status Indicator
+  * Size now displays units instead of bytes
+  * Minid style now displayed instead of hld:// or ark://
+  * Fixed newer style titles not displaying
+* (Re)Added Tombstoning features (`#61`_)
+* Added feature to clear Location and reference Minids by passing "None" (`#61`_)
+* Fixed Unexpected Error if user declines consent on login (`#64`_)
+* Added Main development feature to run the CLI without installing (`#62`_)
+
 
 .. _#54: https://github.com/fair-research/minid/pull/54
+.. _#55: https://github.com/fair-research/minid/pull/55
+.. _#60: https://github.com/fair-research/minid/pull/60
+.. _#61: https://github.com/fair-research/minid/pull/61
+.. _#62: https://github.com/fair-research/minid/pull/62
+.. _#64: https://github.com/fair-research/minid/pull/64
 
 
 2.0.0b2
