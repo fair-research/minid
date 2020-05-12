@@ -58,6 +58,7 @@ class MinidClient(object):
         self.config = config or self.CONFIG
         self.base_url = base_url
         self._authorizer = authorizer
+        self._identifiers_client = None
 
         config_dir = os.path.dirname(self.config)
         if not os.path.exists(config_dir):
@@ -133,11 +134,13 @@ class MinidClient(object):
     @property
     def identifiers_client(self):
         log.debug('Authorizer: {}'.format(self.authorizer))
-        return IdentifierClient(
-            base_url=self.base_url,
-            app_name=self.app_name,
-            authorizer=self.authorizer
-        )
+        if not self._identifiers_client:
+            self._identifiers_client = IdentifierClient(
+                base_url=self.base_url,
+                app_name=self.app_name,
+                authorizer=self.authorizer
+            )
+        return self._identifiers_client
 
     def get_cached_created_by(self):
         """Get the 'created_by' field by pulling the current users name from
@@ -490,8 +493,13 @@ class MinidClient(object):
           A list of records with 'url' field replaced with the identifier. See
           get_or_register_rfm() above for more details.
         """
-        return [self.get_or_register_rfm(record, test)
-                for record in self.read_manifest_entries(manifest_filename)]
+        log.info("Processing batch registrations...")
+        start = datetime.datetime.now()
+        results = [self.get_or_register_rfm(record, test)
+                   for record in self.read_manifest_entries(manifest_filename)]
+        elapsed = datetime.datetime.now() - start
+        log.info("Batch register processed {} entries in {}".format(len(results), elapsed))
+        return results
 
     @staticmethod
     def get_algorithm(algorithm_name):
