@@ -112,6 +112,6 @@ def mock_globus_response():
 
 @pytest.yield_fixture
 def mock_streamed_rfm(mock_rfm):
-    text = '\n'.join([json.dumps(l) for l in mock_rfm])
+    text = '\n'.join([json.dumps(rfm) for rfm in mock_rfm])
     with patch('builtins.open', mock_open(read_data=text)) as mocked_open:
         yield mocked_open
