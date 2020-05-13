@@ -1,6 +1,14 @@
 CHANGELOG
 =========
 
+2.0.0b4
+-------
+
+* Improved performance of batch processing (`#67`_)
+
+.. _#67: https://github.com/fair-research/minid/pull/67
+
+
 2.0.0b3
 -------
 
