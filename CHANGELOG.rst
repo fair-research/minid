@@ -8,6 +8,7 @@ CHANGELOG
 * Added this changelog (`#55`_)
 * Removed EZID link from Minid check command (`#60`_)
 * Added new fields to Minid check command (`#60`_)
+
   * Added Created Date
   * Added Updated Date
   * Added Replaced By reference to remote Minid
@@ -16,6 +17,7 @@ CHANGELOG
   * Size now displays units instead of bytes
   * Minid style now displayed instead of hld:// or ark://
   * Fixed newer style titles not displaying
+
 * (Re)Added Tombstoning features (`#61`_)
 * Added feature to clear Location and reference Minids by passing "None" (`#61`_)
 * Fixed Unexpected Error if user declines consent on login (`#64`_)
