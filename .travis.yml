@@ -11,6 +11,6 @@ install:
   - pip install -r test-requirements.txt
   - pip install python-coveralls coverage
 script:
-  - flake8 minid tests examples
+  - flake8 minid tests
   - pytest tests/ --cov minid --cov-report term-missing
 after_success: coveralls
