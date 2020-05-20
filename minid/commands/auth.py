@@ -13,65 +13,37 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
-from __future__ import print_function
-import logging
-
-from fair_research_login.exc import LocalServerError
-from minid.commands.argparse_ext import subcommand, argument
-from minid.commands.cli import subparsers
-
-log = logging.getLogger(__name__)
+import click
+from minid.commands import get_client
 
 
-@subcommand(
-    [
-        argument(
-            '--remember-me',
-            action='store_true',
-            default=False,
-            help='Ask for a refresh token to prolong login time'),
-        argument(
-            '--force',
-            action='store_true',
-            default=False,
-            help='Do a fresh login, ignoring any existing credentials'),
-        argument(
-            "--no-local-server",
-            action='store_true',
-            default=False,
-            help='Manual login by copying and pasting an auth code.'),
-        argument(
-            "--no-browser",
-            action='store_true',
-            default=False,
-            help='Do not automatically open the browser to login'),
-    ],
-    parent=subparsers,
-    help='Login to register Minids',
-)
-def login(minid_client, args):
-    try:
-        if not args.force:
-            if minid_client.is_logged_in():
-                log.info('You are already logged in.')
-                return
-    except Exception:
-        log.debug('Loading tokens failed, proceeding to login...')
+@click.command(help='Login with Globus')
+@click.option('--refresh-tokens/--no-refresh-tokens', default=True,
+              help='Request a refresh token to login indefinitely')
+@click.option('--force/--no-force', default=False,
+              help='Do a fresh login, ignoring any existing credentials')
+@click.option('--local-server/--no-local-server', default=True,
+              help='Start a local TCP server to handle the auth code')
+@click.option('--browser/--no-browser', default=True,
+              help='Automatically open the browser to login')
+def login(refresh_tokens, force, local_server, browser):
+    mc = get_client()
+    if mc.is_logged_in() and not force:
+        click.echo('You are already logged in.')
+        return
 
-    try:
-        minid_client.login(refresh_tokens=args.remember_me,
-                           no_local_server=args.no_local_server,
-                           no_browser=args.no_browser,
-                           force=args.force)
-        log.info('You have been logged in.')
-    except LocalServerError as lse:
-        log.info(lse)
+    mc.login(refresh_tokens=refresh_tokens,
+             no_local_server=not local_server,
+             no_browser=not browser,
+             force=force)
+    click.secho('You have been logged in.', fg='green')
 
 
-@subcommand([], parent=subparsers, help='Logout to clear stored credentials')
-def logout(minid_client, args):
-    has_logged_out = minid_client.logout()
-    if has_logged_out:
-        log.info('You have been logged out.')
+@click.command(help='Revoke local tokens')
+def logout():
+    mc = get_client()
+    if mc.is_logged_in():
+        mc.logout()
+        click.secho('You have been logged out.', fg='green')
     else:
-        log.info('No user logged in, no logout necessary.')
+        click.echo('No user logged in, no logout necessary.')

@@ -13,7 +13,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
-import logging
+import click
 import sys
 import os
 
@@ -23,20 +23,21 @@ if __name__ == '__main__':
     path = os.path.dirname(os.path.dirname(os.path.dirname(module)))
     sys.path.insert(0, path)
 
-from minid.commands.cli import cli, execute_command  # noqa
-# Importing the commands loads them into argparse.
-from minid.commands import auth, minid_ops, misc  # noqa
-
-log = logging.getLogger(__name__)
+from minid.commands import auth, minid_ops
 
 
+@click.group()
 def main():
-    logger = logging.getLogger('minid')
-    logger.addHandler(logging.StreamHandler())
-    logger.setLevel(logging.INFO)
+    pass
 
-    args = cli.parse_args()
-    execute_command(cli, args, logger)
+
+main.add_command(auth.login)
+main.add_command(auth.logout)
+main.add_command(minid_ops.register)
+main.add_command(minid_ops.batch_register)
+main.add_command(minid_ops.update)
+main.add_command(minid_ops.check)
+main.add_command(minid_ops.version)
 
 
 if __name__ == '__main__':

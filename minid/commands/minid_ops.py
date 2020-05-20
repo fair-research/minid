@@ -13,129 +13,130 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
-from __future__ import print_function
 import logging
-
-from minid.commands.cli import subparsers
-from minid.commands.argparse_ext import (subcommand, argument, shared_argument,
-                                         parse_none_values)
-from minid.exc import MinidException
+import json
+import click
+from minid.commands import get_client, formatting
+from minid.version import __VERSION__
 
 log = logging.getLogger(__name__)
 
-CREATE_UPDATE_ARGS = {
-    '--title': {
-        'help': 'Title for the minid. Defaults to filename'
-    },
-    '--locations': {
-        'nargs': '+',
-        'help': 'Remotely accessible location(s) for the file. "None" to clear'
-    },
-    '--test': {
-        'action': 'store_true',
-        'default': False,
-        'help': 'Register non-permanent Minid in a "test" namespace.'
-    },
-    '--replaces': {
-        'help': 'Specify this Minid is replaced by another. "None" to clear.'
-    },
-}
 
-
-@subcommand(
+def parse_none_values(values, none_value='None'):
+    """
+    Allows users to specify null values to unset options. For example, if
+    someone mistakenly added 'replaced' on a minid and wanted to remove it,
+    they could pass `minid update minid:123 --replaces None`
+    ** Parameters **
+    values -- A list of three tuple items. For example
     [
-        shared_argument('--title'),
-        shared_argument('--locations'),
-        shared_argument('--test'),
-        shared_argument('--replaces'),
-        argument(
-            "filename",
-            help='File to register'
-        ),
-    ],
-    parent=subparsers,
-    shared_arguments=CREATE_UPDATE_ARGS,
-    help='Register a new Minid',
-)
-def register(minid_client, args):
-    kwargs = dict()
-    if args.replaces:
-        kwargs['replaces'] = args.replaces
-    return minid_client.register_file(
-        args.filename,
-        title=args.title,
-        locations=args.locations,
-        test=args.test,
-        **kwargs
-    )
-
-
-@subcommand(
-    [
-        shared_argument('--test'),
-        argument(
-            'filename',
-            help='File to register'
-        ),
-    ],
-    parent=subparsers,
-    shared_arguments=CREATE_UPDATE_ARGS,
-    help='Register a batch of minids from a file or file stream',
-)
-def batch_register(minid_client, args):
-    return minid_client.batch_register(args.filename, args.test)
-
-
-@subcommand([
-        shared_argument('--title'),
-        shared_argument('--locations'),
-        argument('--set-active', action='store_true',
-                 help='Set minid active.'),
-        argument('--set-inactive', action='store_true',
-                 help='Set minid inactive'),
-        argument('--replaced-by',
-                 help='Minid replacing this one. "None" to clear.'),
-        shared_argument('--replaces'),
-        argument(
-            "minid",
-            help='Minid to update'
-        ),
-    ],
-    parent=subparsers,
-    shared_arguments=CREATE_UPDATE_ARGS,
-    help='Update an existing Minid'
-)
-def update(minid_client, args):
-    kwargs = dict()
-    if args.set_active and args.set_inactive:
-        raise MinidException('Cannot use both --set-active and --set-inactive')
-    if args.set_active or args.set_inactive:
-        kwargs['active'] = True if args.set_active else False
-
-    optional_values = [
         ('replaces', args.replaces, None),
         ('replaced_by', args.replaced_by, None),
         ('locations', args.locations, []),
     ]
+    Where each item is (name, value, This option's "None" value)
+
+    none_value -- The user-input value that indicates the option should be
+    set to None
+    """
+    options = {}
+    for option_name, option_value, option_none_value in values:
+        if isinstance(option_value, str) and option_value == none_value:
+            options[option_name] = option_none_value
+        elif isinstance(option_value, list) and option_value == [none_value]:
+            options[option_name] = option_none_value
+        elif option_value:
+            options[option_name] = option_value
+    return options
+
+
+def print_minids(identifier_response, output_json=False):
+    minids = identifier_response.get('identifiers', [identifier_response])
+    if output_json is True:
+        output = json.dumps(minids, indent=2)
+    else:
+        mc = get_client()
+        output = [formatting.pretty_format_minid(mc, minid) for minid in minids]
+        output = formatting.get_separator().join(output)
+    click.echo(output)
+
+
+def json_option(func):
+    return click.option('--json/--no-json', '-j', is_flag=True, default=False, help='Output as JSON')(func)
+
+
+def test_option(func):
+    return click.option('--test/--no-test', default=False, help='Create a temporary test Minid')(func)
+
+
+@click.command()
+@click.argument('filename', type=click.Path())
+@click.option('--title', default=False, help='Add a title for the Minid.')
+@click.option('--locations', multiple=True, help='Remote locations where files can be retrieved')
+@click.option('--replaces', help='Replace another Minid with this Minid')
+@test_option
+@json_option
+def register(filename, title, locations, replaces, test, json):
+    """Register a Minid for a file. """
+    mc = get_client()
+    kwargs = dict()
+    # ONLY add replaces if we intend to actually replace the Minid
+    if replaces:
+        kwargs['replaces'] = replaces
+    minid = mc.register_file(filename, title=title, locations=locations, test=test, **kwargs)
+    print_minids(minid.data, output_json=json)
+
+
+@click.command(help='Register a batch of Minids from an RFM or file stream')
+@click.argument('filename', type=click.Path())
+@test_option
+def batch_register(filename, test):
+    """Register a batch of Minids from an RFM or file stream
+
+    Batch Register can either be passed a file to a Remote File Manifest JSON
+    file, or streamed where each entry in the stream is an RFM formatted dict.
+    """
+    click.echo(json.dumps(get_client().batch_register(filename, test), indent=2))
+
+
+@click.command(help='Update an existing Minid')
+@click.argument('minid', type=click.Path())
+@click.option('--title', default=False, help='Add a title for the Minid.')
+@click.option('--locations', multiple=True, help='Remote locations where files can be retrieved')
+@click.option('--replaces', help='Replace another Minid with this Minid')
+@click.option('--replaced-by', help='Minid replacing this one. "None" to clear.')
+@click.option('--set-active', help='Set Minid active')
+@click.option('--set-inactive', help='Set Minid inactive')
+@json_option
+def update(minid, title, locations, replaces, replaced_by, set_active, set_inactive, json):
+    kwargs = dict()
+    if set_active and set_inactive:
+        click.secho('Cannot use both --set-active and --set-inactive', bg='red')
+        return
+    if set_active or set_inactive:
+        kwargs['active'] = True if set_active else False
+
+    optional_values = [
+        ('replaces', replaces, None),
+        ('replaced_by', replaced_by, None),
+        ('locations', locations, []),
+    ]
 
     kwargs.update(parse_none_values(optional_values))
-    return minid_client.update(args.minid, title=args.title, **kwargs)
+    minid = get_client().update(minid, title=title, **kwargs)
+    print_minids(minid.data, output_json=json)
 
 
-@subcommand(
-    [
-        argument(
-            "entity",
-            help='A Minid or local file'),
-        argument(
-            "--function",
-            required=False,
-            help='function used to generate the checksum, if provided',
-            default='sha256',
-        )
-    ],
-    parent=subparsers,
-    help='Lookup a minid or check if a given file has been registered',
-)
-def check(minid_client, args):
-    return minid_client.check(args.entity, args.function)
+@click.command()
+@click.argument('entity')
+@click.option('--function', default='sha256', help='function used to generate the checksum, if provided')
+@json_option
+def check(entity, function, json):
+    """Lookup a minid or check if a given file has been registered"""
+    print_minids(get_client().check(entity, function).data, output_json=json)
+
+
+@click.command()
+def version():
+    """Print version and exit"""
+    click.echo(__VERSION__)
