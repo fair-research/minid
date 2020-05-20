@@ -30,9 +30,9 @@ def parse_none_values(values, none_value='None'):
     ** Parameters **
     values -- A list of three tuple items. For example
     [
-        ('replaces', args.replaces, None),
-        ('replaced_by', args.replaced_by, None),
-        ('locations', args.locations, []),
+        ('replaces', replaces, None),
+        ('replaced_by', replaced_by, None),
+        ('locations', locations, []),
     ]
     Where each item is (name, value, This option's "None" value)
 
@@ -72,7 +72,7 @@ def test_option(func):
 @click.command()
 @click.argument('filename', type=click.Path())
 @click.option('--title', default=False, help='Add a title for the Minid.')
-@click.option('--locations', multiple=True, help='Remote locations where files can be retrieved')
+@click.option('--locations', help='Remote locations where files can be retrieved')
 @click.option('--replaces', help='Replace another Minid with this Minid')
 @test_option
 @json_option
@@ -83,7 +83,7 @@ def register(filename, title, locations, replaces, test, json):
     # ONLY add replaces if we intend to actually replace the Minid
     if replaces:
         kwargs['replaces'] = replaces
-    minid = mc.register_file(filename, title=title, locations=locations, test=test, **kwargs)
+    minid = mc.register_file(filename, title=title, locations=locations.split(','), test=test, **kwargs)
     print_minids(minid.data, output_json=json)
 
 
@@ -102,7 +102,7 @@ def batch_register(filename, test):
 @click.command(help='Update an existing Minid')
 @click.argument('minid', type=click.Path())
 @click.option('--title', default=False, help='Add a title for the Minid.')
-@click.option('--locations', multiple=True, help='Remote locations where files can be retrieved')
+@click.option('--locations', help='Remote locations where files can be retrieved')
 @click.option('--replaces', help='Replace another Minid with this Minid')
 @click.option('--replaced-by', help='Minid replacing this one. "None" to clear.')
 @click.option('--set-active', help='Set Minid active')
@@ -119,7 +119,7 @@ def update(minid, title, locations, replaces, replaced_by, set_active, set_inact
     optional_values = [
         ('replaces', replaces, None),
         ('replaced_by', replaced_by, None),
-        ('locations', locations, []),
+        ('locations', locations.split(','), []),
     ]
 
     kwargs.update(parse_none_values(optional_values))
