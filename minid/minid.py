@@ -157,10 +157,6 @@ class MinidClient(object):
         self._cached_created_by = user_info.data.get('name', '')
         return self._cached_created_by
 
-    def is_minid(self, entity):
-        """Returns True if entity is a minid, False otherwise"""
-        return isinstance(entity, str) and entity.startswith(self.MINID_PREFIX)
-
     def register_file(self, filename, title='', locations=None, test=False,
                       replaces=None):
         """
@@ -520,6 +516,8 @@ class MinidClient(object):
         if not algorithm:
             algorithm = hashlib.sha256()
             log.debug("Using hash algorithm: {}".format(algorithm))
+        if os.path.isdir(file_path):
+            raise MinidException(f'Directories are not supported by Minid: {file_path}')
 
         log.debug('Computing checksum for {} using {}'.format(file_path,
                                                               algorithm))
@@ -544,6 +542,13 @@ class MinidClient(object):
         """Returns True if the identifier is known and can be resolved by Minid
         """
         return bool(cls.get_identifier_prefix(identifier))
+
+    @classmethod
+    def is_minid(cls, entity):
+        """Returns True if entity is a minid, False otherwise"""
+        if not isinstance(entity, str):
+            return False
+        return bool(entity.startswith(cls.PREFIXES['minid']) or entity.startswith(cls.PREFIXES_TEST['minid']))
 
     @classmethod
     def get_identifier_prefix(cls, identifier):
@@ -587,12 +592,10 @@ class MinidClient(object):
           * "hld:20.500.12582/foobarbaz"
         """
         if identifier_type not in cls.PREFIXES:
-            raise UnknownIdentifier(f'Identifier type {identifier_type} is '
-                                    'not supported by Minid.')
+            raise UnknownIdentifier(f'Identifier type "{identifier_type}" is not supported by Minid.')
         prefix = cls.get_identifier_prefix(identifier)
         if prefix is None:
-            raise UnknownIdentifier(f'Given identifier {identifier} is not '
-                                    'supported by Minid.')
+            raise UnknownIdentifier(f'Given identifier "{identifier}" is not supported by Minid.')
         if cls.is_test(identifier):
             identifier_prefix = cls.PREFIXES_TEST[identifier_type]
         else:
