@@ -6,25 +6,32 @@ from unittest.mock import Mock, mock_open, patch
 
 import fair_research_login
 import globus_sdk
-from minid import MinidClient
+import minid
 
 BASE_DIR = os.path.join(os.path.dirname(__file__), 'files')
 TEST_RFM = os.path.join(BASE_DIR, 'mock_remote_file_manifest.json')
 MOCK_IDENTIFIERS = os.path.join(BASE_DIR, 'mock_identifiers_response.json')
-
-from minid.commands import main  # noqa -- ensures commands are loaded
+MOCK_IDENTIFIERS_MULT = os.path.join(BASE_DIR, 'mock_identifiers_response_mult.json')
 
 
 @pytest.fixture
-def logged_in(monkeypatch):
-    load_mock = Mock()
-    load_mock.return_value = {'auth.globus.org': 'mock_auth_tokens'}
-    monkeypatch.setattr(MinidClient, 'is_logged_in', Mock(return_value=True))
-    monkeypatch.setattr(fair_research_login.NativeClient, 'load_tokens',
-                        load_mock)
-    monkeypatch.setattr(fair_research_login.NativeClient, 'get_authorizers',
-                        load_mock)
-    return load_mock
+def mock_fair_research_login(monkeypatch):
+    tokens = {'auth.globus.org': 'mock_auth_tokens',
+              'https://auth.globus.org/scopes/identifiers.fair-research.org/writer': 'mock_identifiers'}
+    load_mock = Mock(return_value=tokens)
+    monkeypatch.setattr(minid.MinidClient, 'is_logged_in', Mock(return_value=True))
+    monkeypatch.setattr(fair_research_login.NativeClient, 'load_tokens', load_mock)
+    auths = {name: globus_sdk.AccessTokenAuthorizer(token) for name, token in tokens.items()}
+    monkeypatch.setattr(fair_research_login.NativeClient, 'get_authorizers', Mock(return_value=auths))
+    monkeypatch.setattr(fair_research_login.NativeClient, 'get_authorizers_by_scope', Mock(return_value=auths))
+    return fair_research_login.NativeClient
+
+
+@pytest.fixture
+def logged_in(monkeypatch, mock_fair_research_login):
+    username = 'test_user@example.com'
+    monkeypatch.setattr(minid.MinidClient, 'get_cached_created_by', Mock(return_value=username))
+    return username
 
 
 @pytest.fixture
@@ -33,14 +40,21 @@ def logged_out(monkeypatch):
     mock_load.side_effect = fair_research_login.LoadError()
     monkeypatch.setattr(fair_research_login.NativeClient, 'load_tokens',
                         mock_load)
-    monkeypatch.setattr(MinidClient, 'is_logged_in', Mock(return_value=False))
+    monkeypatch.setattr(minid.MinidClient, 'is_logged_in', Mock(return_value=False))
     return mock_load
+
+
+@pytest.fixture
+def mock_cli(monkeypatch, mock_identifiers_client):
+    cli = Mock()
+    monkeypatch.setattr(minid.commands, 'get_client', Mock(return_value=cli))
+    return cli
 
 
 @pytest.fixture
 def mock_identifiers_client(monkeypatch):
     mock_identifier = Mock()
-    monkeypatch.setattr(MinidClient, 'identifiers_client', mock_identifier)
+    monkeypatch.setattr(minid.MinidClient, 'identifiers_client', mock_identifier)
     return mock_identifier
 
 
@@ -54,17 +68,30 @@ def mock_globus_sdk_auth(monkeypatch):
 @pytest.fixture
 def mock_get_cached_created_by(monkeypatch):
     gccb = Mock(return_value='Test User')
-    monkeypatch.setattr(MinidClient, 'get_cached_created_by', gccb)
+    monkeypatch.setattr(minid.MinidClient, 'get_cached_created_by', gccb)
     return gccb
 
 
 @pytest.fixture
-def mock_get_identifier(mock_identifiers_client, mock_globus_response):
+def mock_identifier_response(mock_globus_response):
     response = mock_globus_response()
     with open(MOCK_IDENTIFIERS) as f:
         response.data = json.load(f)
-    mock_identifiers_client.get_identifier = Mock(return_value=response)
     return response
+
+
+@pytest.fixture
+def mock_identifier_response_multiple(mock_globus_response):
+    response = mock_globus_response()
+    with open(MOCK_IDENTIFIERS_MULT) as f:
+        response.data = json.load(f)
+    return response
+
+
+@pytest.fixture
+def mock_get_identifier(mock_identifiers_client, mock_identifier_response):
+    mock_identifiers_client.get_identifier = Mock(return_value=mock_identifier_response)
+    return mock_identifiers_client
 
 
 @pytest.fixture
@@ -89,8 +116,13 @@ def mock_gcs_get_by_checksum(mock_identifiers_client, mock_globus_response):
 @pytest.fixture
 def mocked_checksum(monkeypatch):
     mock_cc = Mock(return_value='mock_checksum')
-    monkeypatch.setattr(MinidClient, 'compute_checksum', mock_cc)
+    monkeypatch.setattr(minid.MinidClient, 'compute_checksum', mock_cc)
     return mock_cc
+
+
+@pytest.fixture
+def mock_rfm_filename():
+    return TEST_RFM
 
 
 @pytest.fixture

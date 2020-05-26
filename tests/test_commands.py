@@ -1,10 +1,12 @@
-import logging
+import traceback
 import pytest
 
 from unittest.mock import Mock
+import click
+from click.testing import CliRunner
+from minid.commands import main, minid_ops, formatting
 from fair_identifiers_client.identifiers_api import IdentifierClientError
 
-from minid.commands import cli
 import minid
 
 LOGGED_IN_COMMANDS = [
@@ -28,7 +30,7 @@ LOGGED_IN_COMMANDS = [
     }),
     ({
         'command': ['logout'],
-        'mock': None,
+        'mock': (minid.MinidClient, 'logout'),
         'expected_call_args': ([], {})
     }),
     ({
@@ -40,16 +42,14 @@ LOGGED_IN_COMMANDS = [
         'command': ['register', 'foo.txt'],
         'mock': (minid.MinidClient, 'register_file'),
         'expected_call_args': (['foo.txt'], {
-            'locations': None,
             'test': False,
             'title': None
         })
     }),
     ({
-        'command': ['--json', 'register', 'foo.txt'],
+        'command': ['register', '--json', 'foo.txt'],
         'mock': (minid.MinidClient, 'register_file'),
         'expected_call_args': (['foo.txt'], {
-            'locations': None,
             'test': False,
             'title': None
         })
@@ -58,15 +58,13 @@ LOGGED_IN_COMMANDS = [
         'command': ['register', '--test', 'foo.txt'],
         'mock': (minid.MinidClient, 'register_file'),
         'expected_call_args': (['foo.txt'], {
-            'locations': None,
             'test': True,
             'title': None
         })
     }),
     ({
         'command': [
-            'register', 'foo.txt', '--locations', 'http://example.com',
-            'http://foo.example.com'
+            'register', 'foo.txt', '--locations', 'http://example.com,http://foo.example.com'
         ],
         'mock': (minid.MinidClient, 'register_file'),
         'expected_call_args': (['foo.txt'], {
@@ -81,7 +79,6 @@ LOGGED_IN_COMMANDS = [
         'command': ['register', 'foo.txt', '--title', 'My Foo'],
         'mock': (minid.MinidClient, 'register_file'),
         'expected_call_args': (['foo.txt'], {
-            'locations': None,
             'test': False,
             'title': 'My Foo'
         })
@@ -120,6 +117,16 @@ LOGGED_IN_COMMANDS = [
         'expected_call_args': (['minid:123'], {
             'replaces': None, 'title': None
         })
+    }),
+    ({
+        'command': ['update', 'minid:123', '--set-active'],
+        'mock': (minid.MinidClient, 'update'),
+        'expected_call_args': (['minid:123'], {'title': None, 'active': True})
+    }),
+    ({
+        'command': ['update', 'minid:123', '--set-inactive'],
+        'mock': (minid.MinidClient, 'update'),
+        'expected_call_args': (['minid:123'], {'title': None, 'active': False})
     }),
     ({
         'command': ['update', 'minid:123', '--replaces', 'None',
@@ -204,6 +211,11 @@ def mock_ic_error(monkeypatch):
     return IdentifierClientError(mock_request)
 
 
+@pytest.fixture
+def mock_print(monkeypatch):
+    monkeypatch.setattr(minid_ops, 'print_minids', Mock())
+
+
 def _mock_function(monkeypatch, func_components):
     if not func_components:
         return None
@@ -214,7 +226,7 @@ def _mock_function(monkeypatch, func_components):
 
 
 @pytest.fixture(params=LOGGED_IN_COMMANDS)
-def cli_command_logged_in(request, logged_in):
+def cli_command_logged_in(request, logged_in, mock_print):
     return request.param
 
 
@@ -226,9 +238,11 @@ def cli_command_logged_out(request, logged_out):
 def execute_and_test_command(monkeypatch, cli_command):
     mocked_function = _mock_function(monkeypatch, cli_command['mock'])
 
-    log = logging.getLogger(__name__)
-    args = cli.cli.parse_args(cli_command['command'])
-    cli.execute_command(cli, args, log)
+    runner = CliRunner()
+    result = runner.invoke(main.cli, cli_command['command'])
+    if result.exc_info:
+        traceback.print_exception(*result.exc_info)
+    assert result.exit_code == 0
 
     if mocked_function is not None:
         f_args, f_kwargs = cli_command['expected_call_args']
@@ -243,92 +257,87 @@ def test_logged_out_commands(monkeypatch, cli_command_logged_out):
     execute_and_test_command(monkeypatch, cli_command_logged_out)
 
 
-def test_command_requires_login(monkeypatch, logged_out, mock_ic_error):
-    register_mock = Mock()
-    register_mock.side_effect = mock_ic_error
-    monkeypatch.setattr(minid.minid.MinidClient, 'register_file',
-                        register_mock)
-
-    log = Mock()
-    args = cli.cli.parse_args(['register', '--test', 'foo.txt'])
-    cli.execute_command(cli, args, log)
-
-    assert register_mock.called
+def test_command_requires_login(logged_out):
+    runner = CliRunner()
+    result = runner.invoke(main.cli, ['register', '--test', 'foo.txt'])
+    traceback.print_exception(*result.exc_info)
+    assert result.exit_code == 1
 
 
-def test_command_requires_login_json_output(monkeypatch, logged_in,
-                                            mock_ic_error):
-    register_mock = Mock()
-    register_mock.side_effect = mock_ic_error
-    monkeypatch.setattr(minid.minid.MinidClient, 'register_file',
-                        register_mock)
-
-    log = Mock()
-    args = cli.cli.parse_args(['--json', 'register', '--test', 'foo.txt'])
-    cli.execute_command(cli, args, log)
-
-    assert register_mock.called
+def test_pretty_print(mock_identifier_response):
+    identifier = mock_identifier_response.data['identifiers'][0]
+    m = formatting.pretty_format_minid(minid.minid.MinidClient, identifier)
+    print(formatting.get_local_datetime(identifier['created']))
+    assert 'Wednesday, April 08, 2020' in m
+    assert 'Thursday, April 09, 2020' in m
+    assert 'minid.test' in m
 
 
-def test_command_print_help():
-    with pytest.raises(SystemExit):
-        args = cli.cli.parse_args(['register'])
-        cli.execute_command(cli, args, Mock())
+def test_print_minids(mock_identifier_response, mock_identifier_response_multiple, monkeypatch):
+    clecko = Mock()
+    monkeypatch.setattr(click, 'echo', clecko)
+    minid_ops.print_minids(mock_identifier_response.data)
+    assert clecko.called
+    minid_ops.print_minids(mock_identifier_response_multiple.data)
+    assert clecko.call_count == 2
 
 
-def test_pretty_print(mock_get_identifier, monkeypatch):
-    # No assertions are made here. Basically, we want to make sure pretty
-    # print does not throw errors.
-    identifier = mock_get_identifier.data['identifiers'][0]
-    cli.pretty_print_minid(minid.minid.MinidClient, identifier)
+def test_print_minids_json(mock_identifier_response, monkeypatch):
+    clecko = Mock()
+    monkeypatch.setattr(click, 'echo', clecko)
+    minid_ops.print_minids(mock_identifier_response.data, output_json=True)
+    assert clecko.called
 
 
-def test_cli_print_minid(mock_get_identifier, monkeypatch):
-    """Test printing minids. Ensure that pretty print was called and the CLI
-    didn't bail out early due to another error."""
-    pretty_print_minid = Mock()
-    monkeypatch.setattr(cli, 'pretty_print_minid', pretty_print_minid)
-    args = cli.cli.parse_args(['--verbose', 'check', 'minid.test:123456'])
-    cli.execute_command(cli, args, Mock())
-    assert pretty_print_minid.called
+def test_batch_register(logged_in, mock_rfm, mock_rfm_filename, mock_gcs_register,
+                        mock_gcs_get_by_checksum):
+    mock_gcs_get_by_checksum.return_value.data['identifiers'] = []
+
+    runner = CliRunner()
+    result = runner.invoke(main.cli, ['batch-register', mock_rfm_filename])
+    assert result.exit_code == 0
+    assert mock_gcs_register.call_count == len(mock_rfm)
 
 
-def test_cli_update_none_values(logged_in, mock_identifiers_client):
-    update = Mock()
-    mock_identifiers_client.update = update
-
-    args = cli.cli.parse_args(['update', 'minid:123', '--locations', 'none'])
-    cli.execute_command(cli, args, Mock())
-
-    assert not mock_identifiers_client.called
+def test_cli_update_active_invalid(logged_in):
+    runner = CliRunner()
+    result = runner.invoke(main.cli, ['update', 'minid:123', '--set-active', '--set-inactive'])
+    assert result.exit_code == 1
+    assert 'Cannot use both' in result.output
 
 
-def test_cli_errors(logged_out):
-    # Raises Logout Error
-    args = cli.cli.parse_args(['register', '--test', 'foo.txt'])
-    cli.execute_command(cli, args, Mock())
-    args = cli.cli.parse_args(['--json', 'register', '--test', 'foo.txt'])
-    cli.execute_command(cli, args, Mock())
+def test_cli_update_none_values(logged_in, mock_print, mock_cli):
+    mock_cli.update.side_effect = minid.exc.UnknownIdentifier()
+    runner = CliRunner()
+    result = runner.invoke(main.cli, ['update', 'minid:123', '--locations', 'none'])
+    traceback.print_exception(*result.exc_info)
+    assert mock_cli.update.called
+    assert result.exit_code == 1
+
+
+# def test_cli_errors(logged_out):
+#     # Raises Logout Error
+#     args = cli.cli.parse_args(['register', '--test', 'foo.txt'])
+#     cli.execute_command(cli, args, Mock())
+#     args = cli.cli.parse_args(['--json', 'register', '--test', 'foo.txt'])
+#     cli.execute_command(cli, args, Mock())
 
 
 def test_file_not_found(logged_in, monkeypatch):
-    log = Mock()
-    monkeypatch.setattr(cli, 'log', log)
-    args = cli.cli.parse_args(['register', 'not_found.txt'])
-    cli.execute_command(cli, args, Mock())
-    assert log.error.called
+    runner = CliRunner()
+    result = runner.invoke(main.cli, ['register', 'not_found.txt'])
+    traceback.print_exception(*result.exc_info)
+    assert result.exit_code == 1
 
 
 def test_command_general_identifiers_error(monkeypatch, logged_in,
                                            mock_ic_error):
     mock_ic_error.http_status = 500
-    register_mock = Mock()
-    register_mock.side_effect = mock_ic_error
-    monkeypatch.setattr(minid.minid.MinidClient, 'register_file',
-                        register_mock)
+    register_mock = Mock(side_effect=mock_ic_error)
+    monkeypatch.setattr(minid.minid.MinidClient, 'register_file', register_mock)
 
-    log = Mock()
-    args = cli.cli.parse_args(['--verbose', 'register', '--test', 'foo.txt'])
-    cli.execute_command(cli, args, log)
-
+    runner = CliRunner()
+    result = runner.invoke(main.cli, ['register', '--test', 'foo.txt'])
+    traceback.print_exception(*result.exc_info)
+    assert result.exit_code == 1
     assert register_mock.called

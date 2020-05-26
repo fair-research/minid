@@ -16,7 +16,9 @@ limitations under the License.
 import logging
 import json
 import click
-from minid.commands import get_client, formatting
+import sys
+from minid import commands
+from minid.commands import formatting
 from minid.version import __VERSION__
 
 log = logging.getLogger(__name__)
@@ -55,14 +57,14 @@ def print_minids(identifier_response, output_json=False):
     if output_json is True:
         output = json.dumps(minids, indent=2)
     else:
-        mc = get_client()
+        mc = commands.get_client()
         output = [formatting.pretty_format_minid(mc, minid) for minid in minids]
         output = formatting.get_separator().join(output)
     click.echo(output)
 
 
 def json_option(func):
-    return click.option('--json/--no-json', '-j', is_flag=True, default=False, help='Output as JSON')(func)
+    return click.option('--json/--no-json', '-j', is_flag=True, help='Output as JSON')(func)
 
 
 def test_option(func):
@@ -71,19 +73,19 @@ def test_option(func):
 
 @click.command()
 @click.argument('filename', type=click.Path())
-@click.option('--title', default=False, help='Add a title for the Minid.')
+@click.option('--title', help='Add a title for the Minid.')
 @click.option('--locations', help='Remote locations where files can be retrieved')
 @click.option('--replaces', help='Replace another Minid with this Minid')
 @test_option
 @json_option
 def register(filename, title, locations, replaces, test, json):
     """Register a Minid for a file. """
-    mc = get_client()
-    kwargs = dict()
-    # ONLY add replaces if we intend to actually replace the Minid
-    if replaces:
-        kwargs['replaces'] = replaces
-    minid = mc.register_file(filename, title=title, locations=locations.split(','), test=test, **kwargs)
+    mc = commands.get_client()
+    kwargs = parse_none_values([
+        ('replaces', replaces, None),
+        ('locations', locations.split(',') if locations else None, []),
+    ])
+    minid = mc.register_file(filename, title=title, test=test, **kwargs)
     print_minids(minid.data, output_json=json)
 
 
@@ -96,34 +98,30 @@ def batch_register(filename, test):
     Batch Register can either be passed a file to a Remote File Manifest JSON
     file, or streamed where each entry in the stream is an RFM formatted dict.
     """
-    click.echo(json.dumps(get_client().batch_register(filename, test), indent=2))
+    click.echo(json.dumps(commands.get_client().batch_register(filename, test), indent=2))
 
 
 @click.command(help='Update an existing Minid')
 @click.argument('minid', type=click.Path())
-@click.option('--title', default=False, help='Add a title for the Minid.')
+@click.option('--title', help='Add a title for the Minid.')
 @click.option('--locations', help='Remote locations where files can be retrieved')
 @click.option('--replaces', help='Replace another Minid with this Minid')
 @click.option('--replaced-by', help='Minid replacing this one. "None" to clear.')
-@click.option('--set-active', help='Set Minid active')
-@click.option('--set-inactive', help='Set Minid inactive')
+@click.option('--set-active', is_flag=True, help='Set Minid active')
+@click.option('--set-inactive', is_flag=True, help='Set Minid inactive')
 @json_option
 def update(minid, title, locations, replaces, replaced_by, set_active, set_inactive, json):
-    kwargs = dict()
     if set_active and set_inactive:
         click.secho('Cannot use both --set-active and --set-inactive', bg='red')
-        return
-    if set_active or set_inactive:
-        kwargs['active'] = True if set_active else False
-
-    optional_values = [
+        sys.exit(1)
+    kwargs = parse_none_values([
         ('replaces', replaces, None),
         ('replaced_by', replaced_by, None),
-        ('locations', locations.split(','), []),
-    ]
-
-    kwargs.update(parse_none_values(optional_values))
-    minid = get_client().update(minid, title=title, **kwargs)
+        ('locations', locations.split(',') if locations else None, []),
+    ])
+    if set_active or set_inactive:
+        kwargs['active'] = True if set_active else False
+    minid = commands.get_client().update(minid, title=title, **kwargs)
     print_minids(minid.data, output_json=json)
 
 
@@ -133,7 +131,7 @@ def update(minid, title, locations, replaces, replaced_by, set_active, set_inact
 @json_option
 def check(entity, function, json):
     """Lookup a minid or check if a given file has been registered"""
-    print_minids(get_client().check(entity, function).data, output_json=json)
+    print_minids(commands.get_client().check(entity, function).data, output_json=json)
 
 
 @click.command()

@@ -2,13 +2,14 @@ import pytest
 import hashlib
 import os
 import sys
+import fair_research_login
 from minid.minid import MinidClient
 from minid.exc import MinidException
 
 from unittest.mock import Mock, call
 
 FILES_DIR = os.path.join(os.path.dirname(__file__), 'files')
-TEST_RFM_FILE = os.path.join(FILES_DIR, 'mock_remote_file_manifest.json')
+EMPTY_DIR = os.path.join(FILES_DIR, 'emptydir')
 TEST_CHECKSUM_FILE = os.path.join(FILES_DIR, 'test_compute_checksum.txt')
 TEST_CHECKSUM_VALUE = ('5994471abb01112afcc18159f6cc74b4'
                        'f511b99806da59b3caf5a9c173cacfc5')
@@ -16,6 +17,16 @@ TEST_CHECKSUM_VALUE = ('5994471abb01112afcc18159f6cc74b4'
 
 def test_load_logged_out_authorizer(logged_out):
     assert MinidClient().identifiers_client.authorizer is None
+
+
+def test_is_logged_in(monkeypatch):
+    mc = MinidClient()
+    monkeypatch.setattr(mc.native_client, 'get_authorizers_by_scope',
+                        Mock(side_effect=fair_research_login.LoadError()))
+    mc._authorizer = None
+    assert mc.is_logged_in() is False
+    mc._authorizer = Mock()
+    assert mc.is_logged_in() is True
 
 
 def test_client_creates_config_dir_if_not_exists(monkeypatch):
@@ -130,19 +141,17 @@ def test_get_or_register_manifest_entry_with_no_matching_hashes(
     assert mock_gcs_get_by_checksum.called
 
 
-def test_batch_register(monkeypatch, logged_in, mock_rfm, mock_gcs_register,
-                        mock_gcs_get_by_checksum):
+def test_batch_register(logged_in, mock_rfm, mock_rfm_filename, mock_gcs_register, mock_gcs_get_by_checksum):
     mock_gcs_get_by_checksum.return_value.data['identifiers'] = []
     cli = MinidClient()
-    cli.batch_register(TEST_RFM_FILE, True)
+    cli.batch_register(mock_rfm_filename, True)
     assert mock_gcs_register.call_count == len(mock_rfm)
 
 
-def test_batch_register_pre_existing(monkeypatch, logged_in, mock_rfm,
-                                     mock_gcs_register,
+def test_batch_register_pre_existing(logged_in, mock_rfm, mock_rfm_filename, mock_gcs_register,
                                      mock_gcs_get_by_checksum):
     cli = MinidClient()
-    cli.batch_register(TEST_RFM_FILE, True)
+    cli.batch_register(mock_rfm_filename, True)
     # Mocked identifiers should match exactly the batch registered identifiers
     assert mock_gcs_register.call_count == 0
 
@@ -218,21 +227,27 @@ def test_compute_checksum():
     assert checksum == TEST_CHECKSUM_VALUE
 
 
-def test_get_cached_created_by(mock_globus_sdk_auth, logged_in):
+def test_empty_dir():
+    # Prehashed sum with openssl, file contents "12345"
+    with pytest.raises(MinidException):
+        MinidClient.compute_checksum(EMPTY_DIR)
+
+
+def test_get_cached_created_by(mock_globus_sdk_auth, mock_fair_research_login):
     mc = MinidClient()
     mc.get_cached_created_by()
     assert mock_globus_sdk_auth.called
 
 
-def test_get_cached_created_by_is_cached(mock_globus_sdk_auth, logged_in):
+def test_get_cached_created_by_is_cached(mock_globus_sdk_auth, mock_fair_research_login):
     mc = MinidClient()
     mc.get_cached_created_by()
     mc.get_cached_created_by()
     assert mock_globus_sdk_auth.call_count == 1
 
 
-def test_read_manifest_entries(mock_rfm):
-    read_rfm = list(MinidClient.read_manifest_entries(TEST_RFM_FILE))
+def test_read_manifest_entries(mock_rfm, mock_rfm_filename):
+    read_rfm = list(MinidClient.read_manifest_entries(mock_rfm_filename))
     assert read_rfm == mock_rfm
 
 
@@ -241,8 +256,8 @@ def test_is_stream(mock_streamed_rfm):
         assert MinidClient._is_stream(manifest) is True
 
 
-def test_is_not_stream():
-    with open(TEST_RFM_FILE, 'r') as manifest:
+def test_is_not_stream(mock_rfm_filename):
+    with open(mock_rfm_filename, 'r') as manifest:
         assert MinidClient._is_stream(manifest) is False
 
 

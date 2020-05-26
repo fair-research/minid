@@ -44,6 +44,17 @@ def valid_to_minid(request):
     return request.param
 
 
+@pytest.fixture(params=[
+    (42, False),
+    (PROD_HDL, False),
+    (TEST_HDL, False),
+    (PROD_MINID, True),
+    (TEST_MINID, True),
+])
+def is_minid(request):
+    return request.param
+
+
 def test_valid_minid_translation(valid_minid_translation):
     ident, to_type, expected = valid_minid_translation
     result = minid.MinidClient.to_identifier(ident, identifier_type=to_type)
@@ -59,3 +70,8 @@ def test_invalid_minid_translation(invalid_minid_translation):
 def test_valid_to_minid(valid_to_minid):
     ident, expected = valid_to_minid
     assert minid.MinidClient.to_minid(ident) == expected
+
+
+def test_is_minid(is_minid):
+    ident, expected = is_minid
+    assert minid.MinidClient().is_minid(ident) == expected

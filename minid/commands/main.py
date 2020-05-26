@@ -16,6 +16,7 @@ limitations under the License.
 import click
 import sys
 import os
+import logging
 
 if __name__ == '__main__':
     # Setup pathing
@@ -24,21 +25,44 @@ if __name__ == '__main__':
     sys.path.insert(0, path)
 
 from minid.commands import auth, minid_ops
+from minid import exc
+
+log = logging.getLogger(__name__)
 
 
-@click.group()
-def main():
+class MainCommandGroup(click.Group):
+    """Override invoke to catch top level errors"""
+    def invoke(self, ctx):
+        try:
+            return super(MainCommandGroup, self).invoke(ctx)
+        except exc.LoginRequired:
+            click.secho('You need to login first', err=True)
+            click.get_current_context().exit(1)
+        except Exception as e:
+            log.exception(e)
+            click.secho(f'{str(e)}', err=True)
+            click.get_current_context().exit(1)
+
+
+def main_group(*args, **kwargs):
+    def inner_func(f):
+        return click.group(*args, cls=MainCommandGroup, **kwargs)(f)
+    return inner_func
+
+
+@main_group()
+def cli():
     pass
 
 
-main.add_command(auth.login)
-main.add_command(auth.logout)
-main.add_command(minid_ops.register)
-main.add_command(minid_ops.batch_register)
-main.add_command(minid_ops.update)
-main.add_command(minid_ops.check)
-main.add_command(minid_ops.version)
+cli.add_command(auth.login)
+cli.add_command(auth.logout)
+cli.add_command(minid_ops.register)
+cli.add_command(minid_ops.batch_register)
+cli.add_command(minid_ops.update)
+cli.add_command(minid_ops.check)
+cli.add_command(minid_ops.version)
 
 
 if __name__ == '__main__':
-    main()
+    cli()

@@ -18,7 +18,7 @@ from minid.commands import get_client
 
 
 @click.command(help='Login with Globus')
-@click.option('--refresh-tokens/--no-refresh-tokens', default=True,
+@click.option('--remember-me/--no-remember-me', default=False,
               help='Request a refresh token to login indefinitely')
 @click.option('--force/--no-force', default=False,
               help='Do a fresh login, ignoring any existing credentials')
@@ -26,13 +26,13 @@ from minid.commands import get_client
               help='Start a local TCP server to handle the auth code')
 @click.option('--browser/--no-browser', default=True,
               help='Automatically open the browser to login')
-def login(refresh_tokens, force, local_server, browser):
+def login(remember_me, force, local_server, browser):
     mc = get_client()
     if mc.is_logged_in() and not force:
         click.echo('You are already logged in.')
         return
 
-    mc.login(refresh_tokens=refresh_tokens,
+    mc.login(refresh_tokens=remember_me,
              no_local_server=not local_server,
              no_browser=not browser,
              force=force)

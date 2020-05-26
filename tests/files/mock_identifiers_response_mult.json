@@ -1,0 +1,39 @@
+{
+  "identifiers": [
+    {
+      "active": false,
+      "admins": [],
+      "checksums": [],
+      "created": "2020-04-08T14:17:53.212592",
+      "identifier": "hdl:20.500.12633/bar-identifier",
+      "landing_page": "https://identifiers.fair-research.org/hdl:20.500.12633/abcdefg",
+      "location": [],
+      "metadata": {
+        "length": 100000000000
+      },
+      "replaced_by": "",
+      "replaces": "",
+      "updated": "",
+      "visible_to": [
+        "public"
+      ]
+    },    {
+      "active": true,
+      "admins": [],
+      "checksums": [],
+      "created": "2020-04-08T14:17:53.212592",
+      "identifier": "hdl:20.500.12633/dar-identifier",
+      "landing_page": "https://identifiers.fair-research.org/hdl:20.500.12633/hijklmn",
+      "location": [],
+      "metadata": {
+        "length": 111222333444555666777888999
+      },
+      "replaced_by": "",
+      "replaces": "",
+      "updated": "",
+      "visible_to": [
+        "public"
+      ]
+    }
+  ]
+}
