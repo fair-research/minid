@@ -1,6 +1,16 @@
 CHANGELOG
 =========
 
+
+2.0.0b5
+-------
+
+* Switched CLI from a custom ArgumentParser implementation to Click (`#70`_)
+* Locations field is now specified as a comma-delimited list (`#70`_)
+
+.. _#70: https://github.com/fair-research/minid/pull/70
+
+
 2.0.0b4
 -------
 
