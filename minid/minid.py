@@ -396,14 +396,10 @@ class MinidClient(object):
                 else:
                     yield entity
 
-    def get_or_register_rfm(self, rfm_record, test):
+    def register_rfm(self, rfm_record, test, update_if_exists=False):
         """
-        If the entity within the manifest has already been registered, fetch
-        the remote entity. If None exists, create a new Minid for the data
-        within the manifest entity. Return the 'minid' for the URL. If the
-        record contains multiple hashes, the first one to return a result will
-        be used. If many are returned for the same checksum, the identifier
-        with the most recent date is used.
+        Register a Minid for a given rfm record. Records will always be
+        re-registered unless `update_if_exists` is True.
         ** Parameters **
           ``rfm_record`` (*dict*)
             A single record within a remote_file_manifest. The record must be a
@@ -411,10 +407,7 @@ class MinidClient(object):
             hash algorithm. 'md5' and 'sha256' are common, but anything in
             python hashlib should work too.
           ``test`` (*boolean*)
-            If the record does not exist and should be registered, this will
-            register it in the test namespace. This does not affect existing
-            records. Records already minted in one namespace will not be
-            re-registered in another namespace.
+            Register using a minid test namespace
         ** Returns **
             A dict with 'url' replaced with the registered identifier
         ** Example **
@@ -432,42 +425,27 @@ class MinidClient(object):
             "sha256": "6e3fbc3cc8c58edd0d99cd4925d18cdbd7ffbfa1a7fb201c06",
             "filename": "foo.txt"
           }
-
         """
-        log.debug('Checking entity {}'.format(rfm_record['filename']))
-        searchable_checksums = [ck_sum
-                                for alg_name, ck_sum in rfm_record.items()
-                                if alg_name in SUPPORTED_CHECKSUMS]
-        # Attempt to find any matching identifier for all hashes within
-        # the record.
-        # Break on the first checksum that returns results, and return the most
-        # recent hashes for that record.
-        entity = None
-        for checksum in searchable_checksums:
-            exst = self.identifiers_client.get_identifier_by_checksum(checksum)
-            minids = exst.data.get('identifiers', [])
-            entity = self.get_most_recent_active_entity(minids)
-            if entity:
-                break
-        if not entity:
-            checksums = [{'function': f, 'value': rfm_record.get(f)}
-                         for f in SUPPORTED_CHECKSUMS
-                         if f in rfm_record.keys()]
-            locations = (rfm_record['url']
-                         if isinstance(rfm_record['url'], list)
-                         else [rfm_record['url']]
-                         )
-            entity = self.register(checksums, test=test, locations=locations,
-                                   title=rfm_record['filename'])
+        checksums = [{'function': f, 'value': rfm_record.get(f)}
+                     for f in SUPPORTED_CHECKSUMS
+                     if f in rfm_record.keys()]
+        locations = (rfm_record['url']
+                     if isinstance(rfm_record['url'], list)
+                     else [rfm_record['url']]
+                     )
+        is_minid = self.is_minid(rfm_record['url'])
+        matches_namespace = self.is_test(rfm_record['url']) is test
+        if update_if_exists and is_minid and matches_namespace:
+            m_resp = self.update(rfm_record['url'], checksums=checksums,
+                               locations=locations).data
         else:
-            log.warning('Entity already registered, using {} for {}.'
-                        ''.format(entity['identifier'],
-                                  rfm_record['filename']))
+            m_resp = self.register(checksums, test=test, locations=locations,
+                                 title=rfm_record['filename']).data
         new_manifest = rfm_record.copy()
-        new_manifest['url'] = entity['identifier']
+        new_manifest['url'] = m_resp['identifier']
         return new_manifest
 
-    def batch_register(self, manifest_filename, test):
+    def batch_register(self, manifest_filename, test, update_if_exists=False):
         """
         Register All entries within a remote file manifest, and replace the
         'url' on each record with an identifier. If an identifier already
@@ -491,7 +469,8 @@ class MinidClient(object):
         """
         log.info("Processing batch registrations...")
         start = datetime.datetime.now()
-        results = [self.get_or_register_rfm(record, test)
+        results = [self.register_rfm(record, test,
+                                     update_if_exists=update_if_exists)
                    for record in self.read_manifest_entries(manifest_filename)]
         elapsed = datetime.datetime.now() - start
         log.info("Batch register processed {} entries in {}".format(len(results), elapsed))
