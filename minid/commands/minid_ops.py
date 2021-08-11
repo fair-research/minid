@@ -92,13 +92,17 @@ def register(filename, title, locations, replaces, test, json):
 @click.command(help='Register a batch of Minids from an RFM or file stream')
 @click.argument('filename', type=click.Path())
 @test_option
-def batch_register(filename, test):
+@click.option('--update-if-exists/--no-update-if-exists',
+              default=False, help='Update existing minids in RFM url field')
+def batch_register(filename, test, update_if_exists):
     """Register a batch of Minids from an RFM or file stream
 
     Batch Register can either be passed a file to a Remote File Manifest JSON
     file, or streamed where each entry in the stream is an RFM formatted dict.
     """
-    click.echo(json.dumps(commands.get_client().batch_register(filename, test), indent=2))
+    batch_register = commands.get_client().batch_register(filename, test,
+                                                          update_if_exists=update_if_exists)
+    click.echo(json.dumps(batch_register, indent=2))
 
 
 @click.command(help='Update an existing Minid')
