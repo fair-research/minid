@@ -96,51 +96,6 @@ def test_register_replaces(mock_identifiers_client, logged_in):
     assert expected in mock_identifiers_client.create_identifier.call_args
 
 
-def test_get_most_recent_active_entity(mock_rfm, logged_in,
-                                       mock_gcs_get_by_checksum,
-                                       mock_gcs_register):
-    first = mock_gcs_get_by_checksum.return_value.data['identifiers'][0]
-    second = first.copy()
-    second['created'] = '2030-05-03T16:48:03.463187'
-    second['updated'] = '2030-05-03T16:48:03.463187'
-    second['identifier'] = 'hdl:20.500.12633/the-newest-one'
-    cli = MinidClient()
-    assert cli.get_most_recent_active_entity([first, second]) == second
-    assert cli.get_most_recent_active_entity([second, first]) == second
-
-
-def test_get_or_register_manifest_entity(
-        mock_rfm, logged_in, mock_gcs_get_by_checksum, mock_gcs_register):
-    cli = MinidClient()
-    # Set no pre-existing identifiers so we can register one
-    mock_gcs_get_by_checksum.return_value.data['identifiers'] = []
-    cli.get_or_register_rfm(mock_rfm[0], True)
-    assert mock_gcs_register.called
-    assert mock_gcs_get_by_checksum.called
-
-
-def test_get_or_register_manifest_entity_with_preregistered(
-        mock_rfm, logged_in, mock_gcs_get_by_checksum, mock_gcs_register):
-    cli = MinidClient()
-    cli.get_or_register_rfm(mock_rfm[0], True)
-    assert mock_gcs_register.called is False
-    assert mock_gcs_get_by_checksum.called
-
-
-def test_get_or_register_manifest_entry_with_no_matching_hashes(
-        mock_rfm, logged_in, mock_gcs_get_by_checksum, mock_gcs_register):
-    # Should not return any minids
-    mock_gcs_get_by_checksum.return_value.data['identifiers'] = []
-    # Set custom hash
-    record = mock_rfm[0]
-    del record['sha256']
-    record['sha512'] = 'abcdefg_sha512hash_hijklmnop'
-    cli = MinidClient()
-    cli.get_or_register_rfm(record, True)
-    assert mock_gcs_register.called
-    assert mock_gcs_get_by_checksum.called
-
-
 def test_batch_register(logged_in, mock_rfm, mock_rfm_filename, mock_gcs_register, mock_gcs_get_by_checksum):
     mock_gcs_get_by_checksum.return_value.data['identifiers'] = []
     cli = MinidClient()
@@ -148,12 +103,38 @@ def test_batch_register(logged_in, mock_rfm, mock_rfm_filename, mock_gcs_registe
     assert mock_gcs_register.call_count == len(mock_rfm)
 
 
-def test_batch_register_pre_existing(logged_in, mock_rfm, mock_rfm_filename, mock_gcs_register,
-                                     mock_gcs_get_by_checksum):
+def test_rfm_register_updates_existing(logged_in, mock_get_identifier, mock_gcs_register,
+                                       mock_identifier_response, mock_gcs_update):
+    mock_identifier_response.data = mock_identifier_response.data['identifiers'][0]
+    mock_get_identifier.get_identifier.return_value = mock_identifier_response
+    rfm_record = {
+        "length": 47,
+        "filename": "test_document.txt",
+        "url": "hdl:20.500.12633/foo-identifier",
+        "sha256": "f92d11e4316ac9f282571338dba4df819203639ff5cf8d32225d857828189998"
+    }
     cli = MinidClient()
-    cli.batch_register(mock_rfm_filename, True)
+    cli.register_rfm(rfm_record, True, update_if_exists=True)
     # Mocked identifiers should match exactly the batch registered identifiers
     assert mock_gcs_register.call_count == 0
+    assert mock_gcs_update.call_count == 1
+
+
+def test_rfm_register_replaces_changed(logged_in, mock_get_identifier, mock_gcs_register,
+                                       mock_identifier_response, mock_gcs_update):
+    mock_identifier_response.data = mock_identifier_response.data['identifiers'][0]
+    mock_get_identifier.get_identifier.return_value = mock_identifier_response
+    rfm_record = {
+        "length": 47,
+        "filename": "test_document.txt",
+        "url": "hdl:20.500.12633/foo-identifier",
+        "sha256": "checksum_has_changed"
+    }
+    cli = MinidClient()
+    cli.register_rfm(rfm_record, True, update_if_exists=True)
+    # Mocked identifiers should match exactly the batch registered identifiers
+    assert mock_gcs_register.call_count == 1
+    assert mock_gcs_update.call_count == 0
 
 
 def test_update(mock_identifiers_client, mocked_checksum, logged_in):
@@ -225,6 +206,11 @@ def test_compute_checksum():
     # Prehashed sum with openssl, file contents "12345"
     checksum = MinidClient.compute_checksum(TEST_CHECKSUM_FILE)
     assert checksum == TEST_CHECKSUM_VALUE
+
+
+def test_validate_checksums_without_common_algs_returns_false(mock_identifier_response):
+    checksums = mock_identifier_response['identifiers'][0]['checksums']
+    assert MinidClient.validate_checksums(checksums, []) is False
 
 
 def test_empty_dir():

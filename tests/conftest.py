@@ -10,6 +10,7 @@ import minid
 
 BASE_DIR = os.path.join(os.path.dirname(__file__), 'files')
 TEST_RFM = os.path.join(BASE_DIR, 'mock_remote_file_manifest.json')
+TEST_RFM_IDENTIFIERS = os.path.join(BASE_DIR, 'mock_remote_file_manifest_identifiers.json')
 MOCK_IDENTIFIERS = os.path.join(BASE_DIR, 'mock_identifiers_response.json')
 MOCK_IDENTIFIERS_MULT = os.path.join(BASE_DIR, 'mock_identifiers_response_mult.json')
 
@@ -104,6 +105,15 @@ def mock_gcs_register(mock_identifiers_client, mock_globus_response):
 
 
 @pytest.fixture
+def mock_gcs_update(mock_identifiers_client, mock_globus_response):
+    mock_globus_response = mock_globus_response()
+    mock_globus_response.data = {'identifier': 'updated_identifier'}
+    mock_identifiers_client.update_identifier.return_value = \
+        mock_globus_response
+    return mock_identifiers_client.update_identifier
+
+
+@pytest.fixture
 def mock_gcs_get_by_checksum(mock_identifiers_client, mock_globus_response):
     mock_globus_response = mock_globus_response()
     with open(MOCK_IDENTIFIERS) as f:
@@ -123,6 +133,11 @@ def mocked_checksum(monkeypatch):
 @pytest.fixture
 def mock_rfm_filename():
     return TEST_RFM
+
+
+@pytest.fixture
+def mock_rfm_identifiers_filename():
+    return TEST_RFM_IDENTIFIERS
 
 
 @pytest.fixture

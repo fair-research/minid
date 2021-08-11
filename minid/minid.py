@@ -345,16 +345,6 @@ class MinidClient(object):
             log.debug('File lookup using ({}) {}'.format(algorithm, checksum))
             return self.identifiers_client.get_identifier_by_checksum(checksum)
 
-    def get_most_recent_active_entity(self, entities):
-        """If there are multiple entities, return the entity with the latest
-        timestamp."""
-        active_sorted = sorted(entities,
-                               key=lambda x: datetime.datetime.strptime(
-                                   x["created"], '%Y-%m-%dT%H:%M:%S.%f'),
-                               reverse=True)
-        if active_sorted:
-            return active_sorted[0]
-
     @staticmethod
     def _is_stream(file_handle):
         """
@@ -412,7 +402,7 @@ class MinidClient(object):
             A dict with 'url' replaced with the registered identifier
         ** Example **
         # Calling with a single RFM Record, with test=True to register as test:
-        get_or_register_rfm({
+        register_rfm({
                 "url": "https://example.com/foo.txt",
                 "sha256": "6e3fbc3cc8c58edd0d99cd4925d18cdbd7ffbfa1a7fb201c06",
                 "filename": "foo.txt"
@@ -433,14 +423,35 @@ class MinidClient(object):
                      if isinstance(rfm_record['url'], list)
                      else [rfm_record['url']]
                      )
-        is_minid = self.is_minid(rfm_record['url'])
+        is_valid = self.is_valid_identifier(rfm_record['url'])
         matches_namespace = self.is_test(rfm_record['url']) is test
-        if update_if_exists and is_minid and matches_namespace:
-            m_resp = self.update(rfm_record['url'], checksums=checksums,
-                               locations=locations).data
+        log.debug('{}, URL is minid: {}, matches namespace: {}'
+                  ''.format(rfm_record['url'], is_valid, matches_namespace))
+        if update_if_exists and is_valid and matches_namespace:
+            existing_minid = self.check(rfm_record['url']).data
+            print(existing_minid)
+            # Update the existing minids locations if it exists
+            if existing_minid and self.validate_checksums(
+                    existing_minid['checksums'], checksums):
+                m_resp = self.update(rfm_record['url'],
+                                     title=rfm_record['filename'],
+                                     locations=locations).data
+                log.info('Updating existing minid {} for filename {}'
+                         ''.format(rfm_record['url'], rfm_record['filename']))
+            # Otherwise, re-register and replace the the existing minid
+            else:
+                m_resp = self.register(checksums, test=test,
+                                       locations=locations,
+                                       title=rfm_record['filename'],
+                                       replaces=rfm_record['url'])
+                log.info('re-registered existing minid {} with {} for filename'
+                         ' {}'.format(rfm_record['url'], m_resp['identifier'],
+                                      rfm_record['filename']))
+
         else:
             m_resp = self.register(checksums, test=test, locations=locations,
-                                 title=rfm_record['filename']).data
+                                   title=rfm_record['filename']).data
+            log.info('Replaced {} with minid'.format(rfm_record['url']))
         new_manifest = rfm_record.copy()
         new_manifest['url'] = m_resp['identifier']
         return new_manifest
@@ -448,10 +459,8 @@ class MinidClient(object):
     def batch_register(self, manifest_filename, test, update_if_exists=False):
         """
         Register All entries within a remote file manifest, and replace the
-        'url' on each record with an identifier. If an identifier already
-        exists for this record, use that and do not re-register the record.
-        The identifier is searched via the checksum given, until one matches
-        or no checksum matches.
+        'url' on each record with an identifier. A minid is always registered
+        unless `update_if_exists` is True.
 
         The manifest must conform to the bdbag spec laid out here:
         https://github.com/fair-research/bdbag/blob/master/doc/config.md#remote-file-manifest  # noqa
@@ -489,6 +498,16 @@ class MinidClient(object):
             raise MinidException('Algorithm {} is not available.'
                                  .format(algorithm_name))
         return alg()
+
+    @staticmethod
+    def validate_checksums(checksums1, checksums2):
+        by_key1 = {c['function']: c['value'] for c in checksums1}
+        by_key2 = {c['function']: c['value'] for c in checksums2}
+        common_algorithms = set(by_key1) & set(by_key2)
+        if not common_algorithms:
+            return False
+
+        return all(by_key1[alg] == by_key2[alg] for alg in common_algorithms)
 
     @staticmethod
     def compute_checksum(file_path, algorithm=None, block_size=65536):
