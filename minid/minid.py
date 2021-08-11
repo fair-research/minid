@@ -398,6 +398,9 @@ class MinidClient(object):
             python hashlib should work too.
           ``test`` (*boolean*)
             Register using a minid test namespace
+          ``update_if_exists`` (*bool*) Default False. Attempt to keep an
+            existing minid if one exists and the checksum matches. Otherwise
+            re-register and replace the existing minid.
         ** Returns **
             A dict with 'url' replaced with the registered identifier
         ** Example **
@@ -459,8 +462,10 @@ class MinidClient(object):
     def batch_register(self, manifest_filename, test, update_if_exists=False):
         """
         Register All entries within a remote file manifest, and replace the
-        'url' on each record with an identifier. A minid is always registered
-        unless `update_if_exists` is True.
+        'url' on each record with an identifier. Existing identifiers will
+        be re-registered and replaced with a new identifier. update_if_exists
+        will attempt to keep the same identifier if the checksum matches the
+        original, in which it will update the old minids information.
 
         The manifest must conform to the bdbag spec laid out here:
         https://github.com/fair-research/bdbag/blob/master/doc/config.md#remote-file-manifest  # noqa
@@ -472,6 +477,9 @@ class MinidClient(object):
           ``test`` (*bool*) Register in the temporary test namespace, or the
             permanent production namespace. Records are not re-registered if
             one already exists.
+          ``update_if_exists`` (*bool*) Default False. Attempt to keep an
+            existing minid if one exists and the checksum matches. Otherwise
+            re-register and replace the existing minid.
         ** Returns **
           A list of records with 'url' field replaced with the identifier. See
           get_or_register_rfm() above for more details.
