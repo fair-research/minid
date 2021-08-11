@@ -1,6 +1,16 @@
 CHANGELOG
 =========
 
+2.0.0b6
+-------
+
+* Changed Batch Register behavior (`#77`_)
+  * batch register now creates new minids each time by default
+  * added new ``update_if_changed`` option
+  * Fixed batch register re-using minids from another namespace
+
+.. _#77: https://github.com/fair-research/minid/pull/77
+
 
 2.0.0b5
 -------

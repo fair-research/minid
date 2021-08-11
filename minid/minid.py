@@ -432,7 +432,6 @@ class MinidClient(object):
                   ''.format(rfm_record['url'], is_valid, matches_namespace))
         if update_if_exists and is_valid and matches_namespace:
             existing_minid = self.check(rfm_record['url']).data
-            print(existing_minid)
             # Update the existing minids locations if it exists
             if existing_minid and self.validate_checksums(
                     existing_minid['checksums'], checksums):
