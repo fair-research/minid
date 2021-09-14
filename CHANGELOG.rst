@@ -1,6 +1,12 @@
 CHANGELOG
 =========
 
+2.0.0b7
+
+* Pin Globus SDK version 2
+* Pin tzlocal version 2
+
+
 2.0.0b6
 -------
 
