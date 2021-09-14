@@ -1,5 +1,5 @@
 pytz
-tzlocal
+tzlocal<3.0
 click
 fair-identifiers-client>=0.4.1
 globus-sdk<3.0.0>=1.8.0
