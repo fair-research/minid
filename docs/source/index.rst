@@ -22,12 +22,8 @@ Installation
 
 Minid Client 2.0.0 is avaialble on PyPI. You can install it with the following command::
 
-  $ pip install --pre minid
+  $ pip install minid
 
-
-You can also install the `legacy Minid 1.3.0 version <https://github.com/fair-research/minid/tree/1.3.0>`_ with::
-
-  $ pip install minid==1.3.0
 
 Alternatively, you can download the source code and install using setup tools::
 

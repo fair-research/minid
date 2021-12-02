@@ -26,7 +26,7 @@ Usage
 -----
 Minid 2.0.0 requires python 3.6 or higher::
 
-  $ pip install --pre minid
+  $ pip install minid
 
 Minting identifiers is simple and easy::
 
