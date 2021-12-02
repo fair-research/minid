@@ -1,6 +1,20 @@
 CHANGELOG
 =========
 
+2.0.0
+-----
+
+Minid 2.0.0 is a substantial upgrade including a full switch to Globus Auth,
+use of a new resource server, and an overhaul of the internal SDK and CLI. Highlights
+are shown below, but more information can be found in the beta releases and in git.
+
+* Major overhaul of both Minid client/server (`#26`_)
+* Switch resource server to https://identifiers.fair-research.org/
+* Switch Auth mechanism to use Globus Auth
+* Client now based around the Fair Identifiers Client for minting identifiers
+* Switched CLI from a custom ArgumentParser implementation to Click (`#70`_)
+
+
 2.0.0b8
 -------
 
