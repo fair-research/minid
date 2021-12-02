@@ -1,7 +1,17 @@
 CHANGELOG
 =========
 
+2.0.0b8
+-------
+
+* Unpin Globus SDK (Now handled by fair-identifiers-client)
+* Bump requirements for fair-identifiers-client (support globus-sdk v3) (`#80`_)
+
+.. _#80: https://github.com/fair-research/minid/pull/80
+
+
 2.0.0b7
+-------
 
 * Pin Globus SDK version 2
 * Pin tzlocal version 2
