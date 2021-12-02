@@ -206,6 +206,7 @@ def mock_ic_error(monkeypatch):
     mock_request = Mock()
     mock_request.status_code = 401
     mock_request.headers = {'Content-Type': 'application/json'}
+    mock_request.request.headers = mock_request.headers
     mock_request.json.return_value = {'error': ['error'], 'code': 'foo',
                                       'message': 'foo'}
     return IdentifierClientError(mock_request)
