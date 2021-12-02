@@ -1,6 +1,5 @@
 pytz
 tzlocal<3.0
 click
-fair-identifiers-client>=0.4.1
-globus-sdk<3.0.0>=1.8.0
-fair-research-login>=0.1.5
+fair-identifiers-client>=0.5.0
+fair-research-login>=0.2.4
