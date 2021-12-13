@@ -45,12 +45,6 @@ Quick Start
 -----------
 
 
-.. Note::
-    We are planning to replace the CLI with Click for the next release. We will take
-    every measure to ensure backwards compatibility. However, there may be some
-    differences in Beta 3 and Beta 4.
-
-
 The CLI supports the following simple operations (Note: the `--test` flag creates names in a test namespace that is removed periodically; remove that flag to create production minids.):
 
 * Login with Globus::
