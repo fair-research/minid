@@ -1,6 +1,11 @@
 CHANGELOG
 =========
 
+2.0.1
+-----
+
+* General fixes and updates to docs and README
+
 2.0.0
 -----
 
